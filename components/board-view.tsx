@@ -24,8 +24,16 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { AlignLeft, MoreHorizontal, Pencil, UserPlus, X } from "lucide-react"
+import {
+  AlignLeft,
+  MessageSquare,
+  MoreHorizontal,
+  Pencil,
+  UserPlus,
+  X,
+} from "lucide-react"
 
+import { lexicalToPlainText } from "@/lib/lexical-text"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -226,40 +234,12 @@ function SortableCard({
         <div className="mt-2 flex items-center gap-1.5 text-muted-foreground">
           <AlignLeft className="h-3.5 w-3.5 shrink-0" />
           <span className="line-clamp-1 text-xs leading-4">
-            {plainTextPreview(card.description)}
+            {lexicalToPlainText(card.description)}
           </span>
         </div>
       )}
     </article>
   )
-}
-
-// Cards may store a plain string or (later) richer serialized content. Keep the
-// board preview resilient to both by extracting a short plain-text snippet.
-function plainTextPreview(value: string) {
-  const trimmed = value.trim()
-  if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
-    try {
-      const text = extractTextFromLexical(JSON.parse(trimmed))
-      if (text) return text
-    } catch {
-      // Not serialized editor state — fall back to the raw value.
-    }
-  }
-  return trimmed
-}
-
-function extractTextFromLexical(state: unknown): string {
-  const parts: string[] = []
-  const walk = (node: any) => {
-    if (!node || typeof node !== "object") return
-    if (typeof node.text === "string") parts.push(node.text)
-    const children = node.children ?? node.root?.children
-    if (Array.isArray(children)) children.forEach(walk)
-    else if (node.root) walk(node.root)
-  }
-  walk(state)
-  return parts.join(" ").trim()
 }
 
 function CardComposer({
@@ -696,6 +676,11 @@ export function BoardView({
     if (!activeId || activeType !== "list") return null
     return lists.find((list) => list.id === activeId) ?? null
   }, [activeId, activeType, lists])
+
+  const selectedCardList = React.useMemo(() => {
+    if (!selectedCard) return null
+    return lists.find((list) => list.id === selectedCard.listId) ?? null
+  }, [selectedCard, lists])
 
   React.useEffect(() => {
     setTitle(board.title)
@@ -1605,7 +1590,7 @@ export function BoardView({
 
       {/* Card detail dialog */}
       <Dialog open={!!selectedCard} onOpenChange={() => setSelectedCard(null)}>
-        <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-2xl">
+        <DialogContent className="flex max-h-[88vh] w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl">
           <DialogHeader className="sr-only">
             <DialogTitle>Card details</DialogTitle>
             <DialogDescription>
@@ -1613,54 +1598,90 @@ export function BoardView({
             </DialogDescription>
           </DialogHeader>
           {selectedCard && (
-            <div className="grid gap-6">
-              <Input
-                value={cardTitleDraft}
-                onChange={(event) => setCardTitleDraft(event.target.value)}
-                placeholder="Card title"
-                disabled={!access.canEdit}
-                className="h-auto border-none px-0 pr-8 text-xl font-semibold shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:cursor-default disabled:opacity-100"
-              />
+            <>
+              <div className="flex shrink-0 items-center gap-2 border-b px-4 py-2.5 pr-12">
+                <span className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+                  <Icons.boards className="h-3.5 w-3.5" />
+                  {selectedCardList?.title ?? "Card"}
+                </span>
+              </div>
 
-              <section>
-                <h3 className="mb-2 text-sm font-semibold">Description</h3>
-                <RichTextEditor
-                  key={selectedCard.id}
-                  value={selectedCard.description}
-                  editable={access.canEdit}
-                  onChange={setCardDescriptionDraft}
-                />
-                {access.canEdit && (
-                  <div className="mt-2 flex items-center gap-2">
-                    <Button type="button" size="sm" onClick={saveSelectedCard}>
-                      Save
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      className="text-destructive hover:text-destructive"
-                      onClick={deleteSelectedCard}
-                    >
-                      <Icons.trash className="mr-2 h-4 w-4" />
-                      Delete card
-                    </Button>
+              <div className="flex min-h-0 flex-1 flex-col overflow-y-auto md:flex-row md:overflow-hidden">
+                {/* Main column: title and description */}
+                <div className="space-y-5 p-5 md:min-h-0 md:flex-[1.7] md:overflow-y-auto">
+                  <Input
+                    value={cardTitleDraft}
+                    onChange={(event) => setCardTitleDraft(event.target.value)}
+                    onBlur={() => {
+                      if (
+                        access.canEdit &&
+                        cardTitleDraft.trim() &&
+                        cardTitleDraft.trim() !== selectedCard.title
+                      ) {
+                        void saveSelectedCard()
+                      }
+                    }}
+                    placeholder="Card title"
+                    disabled={!access.canEdit}
+                    className="h-auto border-none px-0 text-xl font-semibold shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:cursor-default disabled:opacity-100"
+                  />
+
+                  <section>
+                    <div className="mb-2 flex items-center gap-2">
+                      <AlignLeft className="h-4 w-4 text-muted-foreground" />
+                      <h3 className="text-sm font-semibold">Description</h3>
+                    </div>
+                    <div className="pl-6">
+                      <RichTextEditor
+                        key={selectedCard.id}
+                        value={selectedCard.description}
+                        editable={access.canEdit}
+                        onChange={setCardDescriptionDraft}
+                      />
+                      {access.canEdit && (
+                        <div className="mt-2 flex items-center gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={saveSelectedCard}
+                          >
+                            Save
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="text-destructive hover:text-destructive"
+                            onClick={deleteSelectedCard}
+                          >
+                            <Icons.trash className="mr-2 h-4 w-4" />
+                            Delete card
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </section>
+                </div>
+
+                {/* Side column: comments and activity */}
+                <div className="space-y-3 border-t p-5 md:min-h-0 md:flex-1 md:overflow-y-auto md:border-l md:border-t-0">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                    <h3 className="text-sm font-semibold">
+                      Comments and activity
+                    </h3>
                   </div>
-                )}
-              </section>
-
-              <section>
-                <h3 className="mb-3 text-sm font-semibold">Comments</h3>
-                <CardComments
-                  boardId={board.id}
-                  cardId={selectedCard.id}
-                  currentUserId={user.id}
-                  canComment={access.canEdit}
-                  canManage={access.canManage}
-                  refreshSignal={eventSignal}
-                />
-              </section>
-            </div>
+                  <CardComments
+                    boardId={board.id}
+                    cardId={selectedCard.id}
+                    currentUserId={user.id}
+                    canComment={access.canEdit}
+                    canManage={access.canManage}
+                    refreshSignal={eventSignal}
+                  />
+                </div>
+              </div>
+            </>
           )}
         </DialogContent>
       </Dialog>

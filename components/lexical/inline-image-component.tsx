@@ -1,7 +1,9 @@
 "use client"
 
 import * as React from "react"
+import { Expand } from "lucide-react"
 
+import { useOptionalInlineImageLightbox } from "@/components/lexical/inline-image-lightbox-context"
 import { useOptionalImageEditorContext } from "@/components/lexical/image-editor-context"
 import {
   buildInlineImageDownloadUrl,
@@ -21,6 +23,7 @@ export function InlineImageComponent({
   height?: number
 }) {
   const context = useOptionalImageEditorContext()
+  const lightbox = useOptionalInlineImageLightbox()
   const [hasError, setHasError] = React.useState(false)
 
   const initialSrc = React.useMemo(() => {
@@ -52,20 +55,44 @@ export function InlineImageComponent({
     )
   }
 
-  return (
-    <span className="my-2 block">
-      {hasError ? (
+  if (hasError) {
+    return (
+      <span className="my-2 block">
         <span className="flex h-24 items-center justify-center rounded-md border border-dashed bg-muted text-xs text-muted-foreground">
           Image unavailable
         </span>
-      ) : (
-        // eslint-disable-next-line @next/next/no-img-element
+      </span>
+    )
+  }
+
+  return (
+    <span className="my-2 block">
+      <button
+        type="button"
+        aria-label="Expand image"
+        disabled={!lightbox}
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={(event) => {
+          event.stopPropagation()
+          lightbox?.openLightbox({
+            src: currentSrc,
+            alt: altText || "Inline image",
+          })
+        }}
+        className={cn(
+          "group relative inline-block max-w-full rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+          lightbox ? "cursor-zoom-in" : "cursor-default"
+        )}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={currentSrc}
           alt={altText || "Inline image"}
           width={width}
           height={height}
-          className={cn("max-h-[480px] max-w-full rounded-md border object-contain")}
+          className={cn(
+            "max-h-[480px] max-w-full rounded-md border object-contain transition-opacity group-hover:opacity-90"
+          )}
           onError={() => {
             if (fallbackSrc && currentSrc !== fallbackSrc) {
               setCurrentSrc(fallbackSrc)
@@ -74,7 +101,12 @@ export function InlineImageComponent({
             setHasError(true)
           }}
         />
-      )}
+        {lightbox && (
+          <span className="pointer-events-none absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-background/85 text-foreground opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+            <Expand className="h-3.5 w-3.5" />
+          </span>
+        )}
+      </button>
     </span>
   )
 }

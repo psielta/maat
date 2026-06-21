@@ -73,6 +73,14 @@ import { NotificationBell } from "@/components/notification-bell"
 import { RichTextEditor } from "@/components/rich-text-editor"
 import { UserAccountNav } from "@/components/user-account-nav"
 import { useBoardMentionAlerts } from "@/hooks/use-board-mention-alerts"
+import {
+  InlineImageLightboxHost,
+  InlineImageLightboxProvider,
+} from "@/components/lexical/inline-image-lightbox-context"
+import {
+  isInlineImageLightboxOpen,
+  preventCardDialogDismissOnLightbox,
+} from "@/lib/inline-image-lightbox-state"
 
 export type BoardCardModel = {
   id: string
@@ -1683,8 +1691,18 @@ export function BoardView({
       </Dialog>
 
       {/* Card detail dialog */}
-      <Dialog open={!!selectedCard} onOpenChange={() => setSelectedCard(null)}>
-        <DialogContent className="flex max-h-[88vh] w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl">
+      <Dialog
+        open={!!selectedCard}
+        onOpenChange={(open) => {
+          if (!open && isInlineImageLightboxOpen()) return
+          if (!open) setSelectedCard(null)
+        }}
+      >
+        <InlineImageLightboxProvider>
+          <DialogContent
+            className="relative flex max-h-[88vh] w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl"
+            onEscapeKeyDown={preventCardDialogDismissOnLightbox}
+          >
           <DialogHeader className="sr-only">
             <DialogTitle>Card details</DialogTitle>
             <DialogDescription>
@@ -1797,7 +1815,9 @@ export function BoardView({
               </div>
             </>
           )}
-        </DialogContent>
+          <InlineImageLightboxHost />
+          </DialogContent>
+        </InlineImageLightboxProvider>
       </Dialog>
     </>
   )

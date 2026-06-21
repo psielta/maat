@@ -7,6 +7,6 @@ export const siteConfig: SiteConfig = {
   url: "http://localhost:14500",
   ogImage: "http://localhost:14500/og.jpg",
   links: {
-    github: "https://github.com/psiel/maat",
+    github: "https://github.com/psielta/maat",
   },
 }

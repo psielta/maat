@@ -4,7 +4,7 @@ Este arquivo orienta agentes de IA trabalhando no Maat.
 
 ## Identidade do App
 
-Maat é um app de portfólio para controle pessoal de tarefas, focado em desenvolvedores de software. A funcionalidade central é um workspace Kanban colaborativo com atualização em tempo real entre usuários.
+Maat é um app de portfólio para controle pessoal de tarefas, focado em desenvolvedores de software. A funcionalidade central é um workspace Kanban colaborativo com atualização em tempo real entre usuários, além de um Diário de Trabalho para registrar decisões e progresso.
 
 Não reintroduza funcionalidades do template original sem pedido explícito. O app não deve ter Billing, Stripe, Pricing, blog de template, docs de template ou login via GitHub neste momento.
 
@@ -14,6 +14,9 @@ Não reintroduza funcionalidades do template original sem pedido explícito. O a
 - `/dashboard` deve continuar levando para boards.
 - Boards são privados por padrão.
 - Compartilhamento acontece entre usuários já existentes no sistema.
+- O Diário de Trabalho fica em `/dashboard/diary`.
+- Notas do diário são privadas por padrão.
+- Uma nota pode ser compartilhada individualmente com outro usuário como `EDITOR` ou `VIEWER`.
 - `OWNER` gerencia membros e pode deletar boards.
 - `EDITOR` edita conteúdo do board.
 - `VIEWER` somente visualiza.
@@ -70,6 +73,7 @@ pnpm build
 
 - Siga os padrões locais antes de criar abstrações novas.
 - Proteja toda mutação de board com `lib/board-access.ts`.
+- Proteja toda mutação de diário com `lib/diary-access.ts`.
 - Grave e publique eventos com `recordBoardEvent` quando a mudança precisar aparecer realtime.
 - Não confie no client para permissão.
 - Mantenha migrations versionadas em `prisma/migrations`.

@@ -31,6 +31,11 @@ const features = [
       "Invite another user as an editor or viewer and collaborate without duplicating context.",
   },
   {
+    title: "Work diary",
+    description:
+      "Keep private notes about decisions and progress, then share a specific note when context matters.",
+  },
+  {
     title: "Realtime updates",
     description:
       "Board changes are broadcast through Redis and streamed to connected browsers with SSE.",
@@ -122,7 +127,7 @@ export default function IndexPage() {
       </section>
 
       <section id="features" className="container py-12 lg:py-20">
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {features.map((feature) => (
             <article
               key={feature.title}

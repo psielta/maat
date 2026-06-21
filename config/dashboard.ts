@@ -9,6 +9,11 @@ export const dashboardConfig: DashboardConfig = {
       icon: "boards",
     },
     {
+      title: "Work Diary",
+      href: "/dashboard/diary",
+      icon: "diary",
+    },
+    {
       title: "Settings",
       href: "/dashboard/settings",
       icon: "settings",

@@ -3,7 +3,7 @@
   <p>Controle pessoal de tarefas para desenvolvedores de software.</p>
 </div>
 
-Maat é um app de portfólio construído com Next.js 16 para organizar trabalho pessoal, bugs, refactors, experimentos e entregas em boards Kanban colaborativos. A experiência principal é o workspace: boards, listas, cards, membros e atualização em tempo real entre usuários conectados.
+Maat é um app de portfólio construído com Next.js 16 para organizar trabalho pessoal, bugs, refactors, experimentos e entregas em boards Kanban colaborativos. A experiência principal é o workspace: boards, listas, cards, diário de trabalho, membros e atualização em tempo real entre usuários conectados.
 
 ## Estado Atual
 
@@ -11,6 +11,7 @@ Maat é um app de portfólio construído com Next.js 16 para organizar trabalho 
 - Autenticação por email magic link via NextAuth.
 - PostgreSQL com Prisma como fonte de verdade.
 - Redis Pub/Sub para eventos realtime e Server-Sent Events no browser.
+- Diário de trabalho privado com compartilhamento individual por nota.
 - MailHog somente em desenvolvimento.
 - Resend planejado para envio de email em produção.
 - Sem GitHub login, sem Billing/Stripe e sem blog/docs do template.
@@ -76,6 +77,8 @@ SMTP_PORT=14525
 - BoardCard: tarefa, bug, refactor, experimento ou item de entrega.
 - BoardMember: permissão de acesso por usuário.
 - BoardEvent: trilha persistida de eventos para auditoria simples.
+- WorkDiaryEntry: nota de diário sobre decisões, progresso e contexto técnico.
+- WorkDiaryEntryShare: compartilhamento individual de uma nota com outro usuário.
 
 Papéis:
 
@@ -116,7 +119,9 @@ app/(marketing)/page.tsx                  Landing page do Maat
 app/(dashboard)/dashboard/boards          UI do workspace Kanban
 app/api/boards                            APIs de boards, listas, cards, membros e eventos
 components/board-view.tsx                 Board interativo com dnd-kit e SSE
+components/work-diary-entry-view.tsx      Editor de nota do diário e compartilhamento
 lib/board-access.ts                       Regras de permissão
+lib/diary-access.ts                       Regras de permissão do diário
 lib/board-events.ts                       Persistência/publicação de eventos
 lib/redis.ts                              Cliente Redis
 prisma/schema.prisma                      Modelo de dados
@@ -128,6 +133,7 @@ docker-compose.yml                        PostgreSQL, Redis e MailHog
 - Melhorar edição inline e estados vazios dos cards.
 - Adicionar filtros por label, prioridade e responsável.
 - Criar templates de boards para projetos de software.
+- Relacionar notas do diário com cards e boards.
 - Adicionar notificações assíncronas com worker quando houver demanda real.
 - Integrar com GitHub futuramente, sem usar login GitHub por enquanto.
 

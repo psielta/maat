@@ -51,6 +51,17 @@ pnpm lint
 pnpm build
 ```
 
+Para qualquer mudança que afete UI, navegação, autenticação ou formulários, também valide no navegador via MCP/Playwright. Use snapshot para localizar elementos e click/type reais para percorrer o fluxo. HTTP smoke isolado não substitui essa validação.
+
+Fluxo mínimo esperado:
+
+- navegar para a tela afetada;
+- capturar snapshot;
+- clicar ou preencher o elemento real;
+- confirmar URL final, título e conteúdo visível.
+
+Exemplo: depois de alterar login ou middleware, clicar no link `Login` da landing page pelo MCP e confirmar `/login` com o formulário de email visível.
+
 Se tocar em Prisma:
 
 ```bash

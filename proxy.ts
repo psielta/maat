@@ -11,10 +11,6 @@ export const proxy = withAuth(
       req.nextUrl.pathname.startsWith("/register")
 
     if (isAuthPage) {
-      if (isAuth) {
-        return NextResponse.redirect(new URL("/dashboard", req.url))
-      }
-
       return null
     }
 

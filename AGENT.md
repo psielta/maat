@@ -59,6 +59,20 @@ pnpm exec prisma migrate deploy
 pnpm dev
 ```
 
+## Validação MCP Obrigatória
+
+Para mudanças em UI, navegação, autenticação, dashboard, boards ou diário, não basta validar com `Invoke-WebRequest`, build ou chamadas HTTP diretas.
+
+O agente deve validar o fluxo real no navegador usando MCP/Playwright:
+
+- abrir a tela afetada com `browser_navigate`;
+- inspecionar a tela com `browser_snapshot`;
+- clicar nos links/botões reais com `browser_click`;
+- preencher campos com `browser_type` quando houver formulário;
+- confirmar URL, título da página e elementos visíveis após a interação.
+
+Exemplo mínimo para login: abrir `/`, localizar o link `Login` no snapshot, clicar nele e confirmar que a página final é `/login` com o formulário de email visível. Se uma ferramenta MCP necessária não estiver carregada, use `tool_search` para carregá-la antes de concluir. Se ainda assim não estiver disponível, registre explicitamente a limitação e não declare o fluxo interativo como validado.
+
 Validação antes de finalizar mudanças:
 
 ```bash

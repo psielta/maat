@@ -24,6 +24,11 @@ export function lexicalToPlainText(value: string | null | undefined): string {
   const parts: string[] = []
   const walk = (node: any) => {
     if (!node || typeof node !== "object") return
+    if (node.type === "mention" && typeof node.displayName === "string") {
+      parts.push(`@${node.displayName}`)
+      return
+    }
+
     if (typeof node.text === "string") {
       parts.push(node.text)
       return

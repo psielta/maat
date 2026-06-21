@@ -48,6 +48,9 @@ import {
   Underline,
 } from "lucide-react"
 
+import { MentionsPlugin } from "@/components/lexical/mentions-plugin"
+import type { MentionableUser } from "@/lib/board-mentionable-users"
+import { MentionNode } from "@/lib/lexical/mention-node"
 import { cn } from "@/lib/utils"
 
 const editorTheme = {
@@ -62,6 +65,8 @@ const editorTheme = {
     listitem: "mb-1",
   },
   link: "text-primary underline underline-offset-2",
+  mention:
+    "rounded bg-primary/10 px-1 font-medium text-primary",
   text: {
     bold: "font-semibold",
     italic: "italic",
@@ -70,7 +75,14 @@ const editorTheme = {
   },
 }
 
-const editorNodes = [HeadingNode, QuoteNode, ListNode, ListItemNode, LinkNode]
+const editorNodes = [
+  HeadingNode,
+  QuoteNode,
+  ListNode,
+  ListItemNode,
+  LinkNode,
+  MentionNode,
+]
 
 function isSerializedState(value: string) {
   const trimmed = value.trim()
@@ -275,12 +287,14 @@ export function RichTextEditor({
   onChange,
   placeholder = "Add a more detailed description…",
   className,
+  mentionableUsers,
 }: {
   value?: string | null
   editable?: boolean
   onChange?: (serialized: string) => void
   placeholder?: string
   className?: string
+  mentionableUsers?: MentionableUser[]
 }) {
   const initialConfig = {
     namespace: "card-description",
@@ -336,6 +350,9 @@ export function RichTextEditor({
       <HistoryPlugin />
       <ListPlugin />
       <LinkPlugin />
+      {editable && mentionableUsers && mentionableUsers.length > 0 && (
+        <MentionsPlugin mentionableUsers={mentionableUsers} />
+      )}
       {editable && (
         <OnChangePlugin onChange={handleChange} ignoreSelectionChange />
       )}

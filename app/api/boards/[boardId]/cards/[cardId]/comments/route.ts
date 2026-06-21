@@ -9,6 +9,7 @@ import {
 } from "@/lib/board-access"
 import { recordBoardEvent } from "@/lib/board-events"
 import { db } from "@/lib/db"
+import { extractMentionedUserIds } from "@/lib/lexical-mentions"
 import { lexicalToPlainText } from "@/lib/lexical-text"
 import { createNotifications } from "@/lib/notifications"
 import { boardCardCommentCreateSchema } from "@/lib/validations/board"
@@ -157,6 +158,7 @@ export async function POST(req: Request, context: RouteContext) {
 
     const json = await req.json()
     const body = boardCardCommentCreateSchema.parse(json)
+    const mentionedUserIds = extractMentionedUserIds(body.content)
     const attachmentIds = body.attachmentIds ?? []
 
     if (attachmentIds.length > 0) {
@@ -178,6 +180,23 @@ export async function POST(req: Request, context: RouteContext) {
           { status: 422 }
         )
       }
+    }
+
+    const board = card.list.board
+    const validBoardUserIds = new Set([
+      board.authorId,
+      ...board.members.map((member) => member.userId),
+    ])
+
+    const invalidMention = mentionedUserIds.find(
+      (mentionedUserId) => !validBoardUserIds.has(mentionedUserId)
+    )
+
+    if (invalidMention) {
+      return Response.json(
+        { message: "One or more mentioned users are not board members." },
+        { status: 422 }
+      )
     }
 
     const comment = await db.$transaction(async (tx) => {
@@ -219,25 +238,25 @@ export async function POST(req: Request, context: RouteContext) {
       action: "comment.created",
     })
 
-    const board = card.list.board
-    const recipientIds = [
-      board.authorId,
-      ...board.members.map((member) => member.userId),
-    ]
+    const mentionRecipients = mentionedUserIds.filter(
+      (mentionedUserId) => mentionedUserId !== userId
+    )
 
-    await createNotifications({
-      userIds: recipientIds,
-      actorId: userId,
-      type: "comment.created",
-      data: {
-        boardId: board.id,
-        boardTitle: board.title,
-        cardId: card.id,
-        cardTitle: card.title,
-        actorName: comment.author.name || comment.author.email || "Someone",
-        snippet: lexicalToPlainText(body.content).slice(0, 140),
-      },
-    })
+    if (mentionRecipients.length > 0) {
+      await createNotifications({
+        userIds: mentionRecipients,
+        actorId: userId,
+        type: "comment.mentioned",
+        data: {
+          boardId: board.id,
+          boardTitle: board.title,
+          cardId: card.id,
+          cardTitle: card.title,
+          actorName: comment.author.name || comment.author.email || "Someone",
+          snippet: lexicalToPlainText(body.content).slice(0, 140),
+        },
+      })
+    }
 
     return Response.json(serializeComment(comment), { status: 201 })
   } catch (error) {

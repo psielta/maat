@@ -45,6 +45,9 @@ function describe(item: NotificationItem) {
   if (item.type === "comment.created") {
     return `${actor} commented on “${data.cardTitle ?? "a card"}”`
   }
+  if (item.type === "comment.mentioned") {
+    return `${actor} mentioned you on “${data.cardTitle ?? "a card"}”`
+  }
   return `${actor} updated ${data.boardTitle ?? "a board"}`
 }
 

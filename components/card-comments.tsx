@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { toast } from "@/components/ui/use-toast"
 import { RichTextEditor } from "@/components/rich-text-editor"
+import type { MentionableUser } from "@/lib/board-mentionable-users"
 import type { AttachmentModel } from "@/lib/upload-attachment"
 
 type CommentModel = {
@@ -39,6 +40,7 @@ export function CardComments({
   canComment,
   canManage,
   refreshSignal,
+  mentionableUsers = [],
 }: {
   boardId: string
   cardId: string
@@ -46,6 +48,7 @@ export function CardComments({
   canComment: boolean
   canManage: boolean
   refreshSignal: number
+  mentionableUsers?: MentionableUser[]
 }) {
   const [comments, setComments] = React.useState<CommentModel[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
@@ -183,8 +186,9 @@ export function CardComments({
             value=""
             editable
             onChange={setDraft}
-            placeholder="Write a comment…"
+            placeholder="Write a comment… Use @ to mention someone."
             className="bg-background"
+            mentionableUsers={mentionableUsers}
           />
           <AttachmentUploader
             boardId={boardId}

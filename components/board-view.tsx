@@ -66,6 +66,7 @@ import { toast } from "@/components/ui/use-toast"
 import { BoardSwitcher, type BoardSummary } from "@/components/board-switcher"
 import { CardAttachments } from "@/components/card-attachments"
 import { CardComments } from "@/components/card-comments"
+import { getMentionableUsers } from "@/lib/board-mentionable-users"
 import { Icons } from "@/components/icons"
 import { NotificationBell } from "@/components/notification-bell"
 import { RichTextEditor } from "@/components/rich-text-editor"
@@ -654,6 +655,10 @@ export function BoardView({
   const [isSavingBoard, setIsSavingBoard] = React.useState(false)
   const [lists, setLists] = React.useState(() => normalizeLists(board.lists))
   const [members, setMembers] = React.useState(board.members)
+  const mentionableUsers = React.useMemo(
+    () => getMentionableUsers(members, user.id),
+    [members, user.id]
+  )
   const [memberEmail, setMemberEmail] = React.useState("")
   const [memberRole, setMemberRole] =
     React.useState<"EDITOR" | "VIEWER">("EDITOR")
@@ -1756,6 +1761,7 @@ export function BoardView({
                     canComment={access.canEdit}
                     canManage={access.canManage}
                     refreshSignal={eventSignal}
+                    mentionableUsers={mentionableUsers}
                   />
                 </div>
               </div>

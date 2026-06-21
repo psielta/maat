@@ -27,7 +27,7 @@ export function Editor({ post }: EditorProps) {
   const { register, handleSubmit } = useForm<FormData>({
     resolver: zodResolver(postPatchSchema),
   })
-  const ref = React.useRef<EditorJS>()
+  const ref = React.useRef<EditorJS | null>(null)
   const router = useRouter()
   const [isSaving, setIsSaving] = React.useState<boolean>(false)
   const [isMounted, setIsMounted] = React.useState<boolean>(false)
@@ -78,7 +78,7 @@ export function Editor({ post }: EditorProps) {
 
       return () => {
         ref.current?.destroy()
-        ref.current = undefined
+        ref.current = null
       }
     }
   }, [isMounted, initializeEditor])

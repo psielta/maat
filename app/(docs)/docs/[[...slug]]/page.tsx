@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation"
-import { allDocs } from "contentlayer/generated"
 
 import { getTableOfContents } from "@/lib/toc"
 import { Mdx } from "@/components/mdx-components"
@@ -11,12 +10,13 @@ import "@/styles/mdx.css"
 import { Metadata } from "next"
 
 import { env } from "@/env.mjs"
+import { allDocs, getRouteSegments } from "@/lib/content"
 import { absoluteUrl } from "@/lib/utils"
 
 interface DocPageProps {
-  params: {
-    slug: string[]
-  }
+  params: Promise<{
+    slug?: string[]
+  }>
 }
 
 async function getDocFromParams(params) {
@@ -24,7 +24,7 @@ async function getDocFromParams(params) {
   const doc = allDocs.find((doc) => doc.slugAsParams === slug)
 
   if (!doc) {
-    null
+    return null
   }
 
   return doc
@@ -33,7 +33,7 @@ async function getDocFromParams(params) {
 export async function generateMetadata({
   params,
 }: DocPageProps): Promise<Metadata> {
-  const doc = await getDocFromParams(params)
+  const doc = await getDocFromParams(await params)
 
   if (!doc) {
     return {}
@@ -73,15 +73,15 @@ export async function generateMetadata({
 }
 
 export async function generateStaticParams(): Promise<
-  DocPageProps["params"][]
+  Awaited<DocPageProps["params"]>[]
 > {
   return allDocs.map((doc) => ({
-    slug: doc.slugAsParams.split("/"),
+    slug: getRouteSegments(doc),
   }))
 }
 
 export default async function DocPage({ params }: DocPageProps) {
-  const doc = await getDocFromParams(params)
+  const doc = await getDocFromParams(await params)
 
   if (!doc) {
     notFound()

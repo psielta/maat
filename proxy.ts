@@ -2,8 +2,8 @@ import { getToken } from "next-auth/jwt"
 import { withAuth } from "next-auth/middleware"
 import { NextResponse } from "next/server"
 
-export default withAuth(
-  async function middleware(req) {
+export const proxy = withAuth(
+  async function proxy(req) {
     const token = await getToken({ req })
     const isAuth = !!token
     const isAuthPage =

@@ -1,6 +1,10 @@
 import * as React from "react"
 import Image from "next/image"
-import { useMDXComponent } from "next-contentlayer/hooks"
+import { MDXRemote } from "next-mdx-remote/rsc"
+import rehypeAutolinkHeadings from "rehype-autolink-headings"
+import rehypePrettyCode from "rehype-pretty-code"
+import rehypeSlug from "rehype-slug"
+import remarkGfm from "remark-gfm"
 
 import { cn } from "@/lib/utils"
 import { Callout } from "@/components/callout"
@@ -156,12 +160,59 @@ interface MdxProps {
   code: string
 }
 
-export function Mdx({ code }: MdxProps) {
-  const Component = useMDXComponent(code)
+function addClassName(node, className: string) {
+  node.properties ??= {}
+  const current = node.properties.className
 
+  if (Array.isArray(current)) {
+    node.properties.className = [...current, className]
+    return
+  }
+
+  node.properties.className = current ? [current, className] : [className]
+}
+
+export function Mdx({ code }: MdxProps) {
   return (
     <div className="mdx">
-      <Component components={components} />
+      <MDXRemote
+        source={code}
+        components={components}
+        options={{
+          mdxOptions: {
+            remarkPlugins: [remarkGfm],
+            rehypePlugins: [
+              rehypeSlug,
+              [
+                rehypePrettyCode,
+                {
+                  theme: "github-dark",
+                  onVisitLine(node) {
+                    if (node.children.length === 0) {
+                      node.children = [{ type: "text", value: " " }]
+                    }
+                  },
+                  onVisitHighlightedLine(node) {
+                    addClassName(node, "line--highlighted")
+                  },
+                  onVisitHighlightedWord(node) {
+                    node.properties.className = ["word--highlighted"]
+                  },
+                },
+              ],
+              [
+                rehypeAutolinkHeadings,
+                {
+                  properties: {
+                    className: ["subheading-anchor"],
+                    ariaLabel: "Link to section",
+                  },
+                },
+              ],
+            ],
+          },
+        }}
+      />
     </div>
   )
 }

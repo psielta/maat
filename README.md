@@ -8,11 +8,11 @@
 
 # Taxonomy
 
-An open source application built using the new router, server components and everything new in Next.js 13.
+An open source application built using the App Router, server components and Next.js 16.
 
 ## About this project
 
-This project as an experiment to see how a modern app (with features like authentication, subscriptions, API routes, static pages for docs ...etc) would work in Next.js 13 and server components. 
+This project as an experiment to see how a modern app (with features like authentication, subscriptions, API routes, static pages for docs ...etc) works with Next.js and server components.
 
 ## Features
 
@@ -26,9 +26,11 @@ This project as an experiment to see how a modern app (with features like authen
 - API Routes and Middlewares
 - Authentication using **NextAuth.js**
 - ORM using **Prisma**
-- Database on **PlanetScale**
+- Local database using **PostgreSQL** in Docker
 - UI Components built using **Radix UI**
-- Documentation and blog using **MDX** and **Contentlayer**
+- Documentation and blog using **MDX**
+- Development email using **MailHog**
+- Production email using **Resend**
 - Subscriptions using **Stripe**
 - Styled using **Tailwind CSS**
 - Validations using **Zod**
@@ -66,17 +68,38 @@ If you have some suggestions, feel free to create an issue.
 pnpm install
 ```
 
-2. Copy `.env.example` to `.env.local` and update the variables.
+2. Copy `.env.example` to `.env.local` and `.env`, then update values if needed.
 
 ```sh
 cp .env.example .env.local
+cp .env.example .env
 ```
 
-3. Start the development server:
+3. Start PostgreSQL and MailHog:
+
+```sh
+docker compose up -d postgres mailhog
+```
+
+4. Apply database migrations:
+
+```sh
+pnpm exec prisma migrate deploy
+```
+
+5. Start the development server:
 
 ```sh
 pnpm dev
 ```
+
+The app runs at `http://localhost:14500`.
+
+Local services use the `14500-14999` port range:
+
+- PostgreSQL: `localhost:14532`
+- MailHog SMTP: `localhost:14525`
+- MailHog UI: `http://localhost:14580`
 
 ## License
 

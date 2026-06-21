@@ -1,0 +1,27 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: taxonomy-postgres
+    environment:
+      POSTGRES_DB: taxonomy
+      POSTGRES_USER: taxonomy
+      POSTGRES_PASSWORD: taxonomy
+    ports:
+      - "14532:5432"
+    volumes:
+      - taxonomy_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taxonomy -d taxonomy"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: taxonomy-mailhog
+    ports:
+      - "14525:1025"
+      - "14580:8025"
+
+volumes:
+  taxonomy_postgres_data:

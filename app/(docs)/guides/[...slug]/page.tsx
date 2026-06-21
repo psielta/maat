@@ -1,6 +1,5 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { allGuides } from "contentlayer/generated"
 
 import { getTableOfContents } from "@/lib/toc"
 import { Icons } from "@/components/icons"
@@ -12,13 +11,14 @@ import "@/styles/mdx.css"
 import { Metadata } from "next"
 
 import { env } from "@/env.mjs"
+import { allGuides, getRouteSegments } from "@/lib/content"
 import { absoluteUrl, cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 
 interface GuidePageProps {
-  params: {
-    slug: string[]
-  }
+  params: Promise<{
+    slug?: string[]
+  }>
 }
 
 async function getGuideFromParams(params) {
@@ -26,7 +26,7 @@ async function getGuideFromParams(params) {
   const guide = allGuides.find((guide) => guide.slugAsParams === slug)
 
   if (!guide) {
-    null
+    return null
   }
 
   return guide
@@ -35,7 +35,7 @@ async function getGuideFromParams(params) {
 export async function generateMetadata({
   params,
 }: GuidePageProps): Promise<Metadata> {
-  const guide = await getGuideFromParams(params)
+  const guide = await getGuideFromParams(await params)
 
   if (!guide) {
     return {}
@@ -75,15 +75,15 @@ export async function generateMetadata({
 }
 
 export async function generateStaticParams(): Promise<
-  GuidePageProps["params"][]
+  Awaited<GuidePageProps["params"]>[]
 > {
   return allGuides.map((guide) => ({
-    slug: guide.slugAsParams.split("/"),
+    slug: getRouteSegments(guide),
   }))
 }
 
 export default async function GuidePage({ params }: GuidePageProps) {
-  const guide = await getGuideFromParams(params)
+  const guide = await getGuideFromParams(await params)
 
   if (!guide) {
     notFound()

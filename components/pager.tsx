@@ -1,7 +1,7 @@
 import Link from "next/link"
-import { Doc } from "contentlayer/generated"
 
 import { docsConfig } from "@/config/docs"
+import { Doc } from "@/lib/content"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 import { Icons } from "@/components/icons"

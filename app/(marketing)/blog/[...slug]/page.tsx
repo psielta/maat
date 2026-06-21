@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation"
-import { allAuthors, allPosts } from "contentlayer/generated"
 
 import { Mdx } from "@/components/mdx-components"
 
@@ -9,14 +8,15 @@ import Image from "next/image"
 import Link from "next/link"
 
 import { env } from "@/env.mjs"
+import { allAuthors, allPosts, getRouteSegments } from "@/lib/content"
 import { absoluteUrl, cn, formatDate } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 import { Icons } from "@/components/icons"
 
 interface PostPageProps {
-  params: {
-    slug: string[]
-  }
+  params: Promise<{
+    slug?: string[]
+  }>
 }
 
 async function getPostFromParams(params) {
@@ -24,7 +24,7 @@ async function getPostFromParams(params) {
   const post = allPosts.find((post) => post.slugAsParams === slug)
 
   if (!post) {
-    null
+    return null
   }
 
   return post
@@ -33,7 +33,7 @@ async function getPostFromParams(params) {
 export async function generateMetadata({
   params,
 }: PostPageProps): Promise<Metadata> {
-  const post = await getPostFromParams(params)
+  const post = await getPostFromParams(await params)
 
   if (!post) {
     return {}
@@ -76,15 +76,15 @@ export async function generateMetadata({
 }
 
 export async function generateStaticParams(): Promise<
-  PostPageProps["params"][]
+  Awaited<PostPageProps["params"]>[]
 > {
   return allPosts.map((post) => ({
-    slug: post.slugAsParams.split("/"),
+    slug: getRouteSegments(post),
   }))
 }
 
 export default async function PostPage({ params }: PostPageProps) {
-  const post = await getPostFromParams(params)
+  const post = await getPostFromParams(await params)
 
   if (!post) {
     notFound()

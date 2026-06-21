@@ -193,6 +193,11 @@ export function CardComments({
             }
             className="bg-background"
             mentionableUsers={mentionableUsers}
+            uploadContext={{
+              boardId,
+              cardId,
+              target: "comment",
+            }}
           />
           <AttachmentUploader
             boardId={boardId}
@@ -259,7 +264,15 @@ export function CardComments({
                     </span>
                   </div>
                   <div className="mt-1 rounded-lg bg-muted px-3 py-2 text-sm">
-                    <RichTextEditor value={comment.content} editable={false} />
+                    <RichTextEditor
+                      value={comment.content}
+                      editable={false}
+                      uploadContext={{
+                        boardId,
+                        cardId,
+                        target: "comment",
+                      }}
+                    />
                   </div>
                   {comment.attachments.length > 0 && (
                     <div className="mt-2">

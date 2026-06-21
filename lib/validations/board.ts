@@ -55,17 +55,52 @@ export const boardCardPatchSchema = z.object({
 
 export const MAX_ATTACHMENT_SIZE_BYTES = 125_829_120
 export const MAX_ATTACHMENTS_PER_TARGET = 20
+export const MAX_INLINE_IMAGE_SIZE_BYTES = 10_485_760
+export const MAX_INLINE_IMAGES_PER_CONTENT = 10
 
-export const boardAttachmentPresignSchema = z.object({
-  fileName: z.string().trim().min(1).max(255),
-  mimeType: z.string().trim().min(1).max(255),
-  sizeBytes: z
-    .number()
-    .int()
-    .positive()
-    .max(MAX_ATTACHMENT_SIZE_BYTES),
-  target: z.enum(["card", "comment"]),
-})
+export const INLINE_IMAGE_MIME_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+] as const
+
+export function isAllowedInlineImageMime(mimeType: string) {
+  return (INLINE_IMAGE_MIME_TYPES as readonly string[]).includes(mimeType)
+}
+
+export const boardAttachmentPresignSchema = z
+  .object({
+    fileName: z.string().trim().min(1).max(255),
+    mimeType: z.string().trim().min(1).max(255),
+    sizeBytes: z
+      .number()
+      .int()
+      .positive()
+      .max(MAX_ATTACHMENT_SIZE_BYTES),
+    target: z.enum(["card", "comment", "inline"]),
+  })
+  .superRefine((data, ctx) => {
+    if (data.target !== "inline") {
+      return
+    }
+
+    if (!isAllowedInlineImageMime(data.mimeType)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Only JPEG, PNG, WebP, and GIF images are supported.",
+        path: ["mimeType"],
+      })
+    }
+
+    if (data.sizeBytes > MAX_INLINE_IMAGE_SIZE_BYTES) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Images must be 10MB or smaller.",
+        path: ["sizeBytes"],
+      })
+    }
+  })
 
 // `content` holds serialized rich-text (Lexical) editor state.
 export const boardCardCommentCreateSchema = z.object({

@@ -9,10 +9,18 @@ import {
 } from "@/lib/board-access"
 import { recordBoardEvent } from "@/lib/board-events"
 import { db } from "@/lib/db"
+import { extractInlineImageIds } from "@/lib/lexical-inline-images"
 import { extractMentionedUserIds } from "@/lib/lexical-mentions"
 import { lexicalToPlainText } from "@/lib/lexical-text"
 import { createNotifications } from "@/lib/notifications"
-import { boardCardCommentCreateSchema } from "@/lib/validations/board"
+import {
+  cleanupOrphanInlineImages,
+  InlineImageValidationError,
+} from "@/lib/promote-inline-images"
+import {
+  boardCardCommentCreateSchema,
+  MAX_INLINE_IMAGES_PER_CONTENT,
+} from "@/lib/validations/board"
 
 const routeContextSchema = z.object({
   params: z.object({
@@ -159,7 +167,36 @@ export async function POST(req: Request, context: RouteContext) {
     const json = await req.json()
     const body = boardCardCommentCreateSchema.parse(json)
     const mentionedUserIds = extractMentionedUserIds(body.content)
+    const inlineImageIds = extractInlineImageIds(body.content)
     const attachmentIds = body.attachmentIds ?? []
+
+    if (inlineImageIds.length > MAX_INLINE_IMAGES_PER_CONTENT) {
+      return Response.json(
+        { message: "Too many inline images in this comment." },
+        { status: 422 }
+      )
+    }
+
+    if (inlineImageIds.length > 0) {
+      const validInlineImages = await db.boardCardAttachment.findMany({
+        where: {
+          id: { in: inlineImageIds },
+          cardId: params.cardId,
+          commentId: null,
+          uploadedById: userId,
+          scope: "INLINE",
+          status: "PENDING",
+        },
+        select: { id: true },
+      })
+
+      if (validInlineImages.length !== inlineImageIds.length) {
+        return Response.json(
+          { message: "One or more inline images are invalid." },
+          { status: 422 }
+        )
+      }
+    }
 
     if (attachmentIds.length > 0) {
       const validAttachments = await db.boardCardAttachment.findMany({
@@ -226,6 +263,23 @@ export async function POST(req: Request, context: RouteContext) {
         })
       }
 
+      if (inlineImageIds.length > 0) {
+        await tx.boardCardAttachment.updateMany({
+          where: {
+            id: { in: inlineImageIds },
+            cardId: params.cardId,
+            commentId: null,
+            uploadedById: userId,
+            scope: "INLINE",
+            status: "PENDING",
+          },
+          data: {
+            commentId: created.id,
+            status: "READY",
+          },
+        })
+      }
+
       return tx.boardCardComment.findUniqueOrThrow({
         where: { id: created.id },
         select: commentSelect,
@@ -258,8 +312,18 @@ export async function POST(req: Request, context: RouteContext) {
       })
     }
 
+    await cleanupOrphanInlineImages({
+      cardId: params.cardId,
+      userId,
+      referencedIds: inlineImageIds,
+    })
+
     return Response.json(serializeComment(comment), { status: 201 })
   } catch (error) {
+    if (error instanceof InlineImageValidationError) {
+      return Response.json({ message: error.message }, { status: 422 })
+    }
+
     if (error instanceof z.ZodError) {
       return Response.json(error.issues, { status: 422 })
     }

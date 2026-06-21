@@ -1736,6 +1736,11 @@ export function BoardView({
                         value={selectedCard.description}
                         editable={access.canEdit}
                         onChange={setCardDescriptionDraft}
+                        uploadContext={{
+                          boardId: board.id,
+                          cardId: selectedCard.id,
+                          target: "card-description",
+                        }}
                       />
                       {access.canEdit && (
                         <div className="mt-2 flex items-center gap-2">

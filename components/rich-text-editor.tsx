@@ -41,6 +41,7 @@ import {
 import {
   Bold,
   Heading3,
+  Image as ImageIcon,
   Italic,
   List,
   ListOrdered,
@@ -48,9 +49,23 @@ import {
   Underline,
 } from "lucide-react"
 
+import {
+  ImageEditorProvider,
+  type ImageUploadContext,
+  useImageEditorContext,
+} from "@/components/lexical/image-editor-context"
+import { ImagesPlugin } from "@/components/lexical/images-plugin"
 import { MentionsPlugin } from "@/components/lexical/mentions-plugin"
+import { toast } from "@/components/ui/use-toast"
 import type { MentionableUser } from "@/lib/board-mentionable-users"
+import {
+  $createImageNode,
+  $isImageNode,
+  ImageNode,
+} from "@/lib/lexical/image-node"
 import { MentionNode } from "@/lib/lexical/mention-node"
+import { uploadInlineImage } from "@/lib/upload-inline-image"
+import { MAX_INLINE_IMAGES_PER_CONTENT } from "@/lib/validations/board"
 import { cn } from "@/lib/utils"
 
 const editorTheme = {
@@ -82,6 +97,7 @@ const editorNodes = [
   ListItemNode,
   LinkNode,
   MentionNode,
+  ImageNode,
 ]
 
 function isSerializedState(value: string) {
@@ -100,7 +116,6 @@ function buildInitialState(value?: string | null) {
   const trimmed = value.trim()
   if (!trimmed) return undefined
   if (isSerializedState(trimmed)) return trimmed
-  // Legacy / plain-text descriptions: seed a single paragraph.
   return () => {
     const root = $getRoot()
     if (root.getFirstChild() !== null) return
@@ -110,16 +125,59 @@ function buildInitialState(value?: string | null) {
   }
 }
 
+function countImageNodes() {
+  let count = 0
+  const root = $getRoot()
+
+  const walk = (node: ReturnType<typeof root.getFirstChild>) => {
+    if (!node) return
+    if ($isImageNode(node)) {
+      count += 1
+    }
+    if ("getChildren" in node && typeof node.getChildren === "function") {
+      node.getChildren().forEach((child) => walk(child))
+    }
+  }
+
+  root.getChildren().forEach((child) => walk(child))
+  return count
+}
+
+function insertImageNode(editor: LexicalEditor, attachmentId: string) {
+  editor.update(() => {
+    const imageNode = $createImageNode(attachmentId, "")
+    const selection = $getSelection()
+    if ($isRangeSelection(selection)) {
+      selection.insertNodes([imageNode])
+      return
+    }
+    $getRoot().append(imageNode)
+  })
+}
+
+function isEditorContentEmpty() {
+  const root = $getRoot()
+  if (root.getChildrenSize() === 0) return true
+  if (root.getChildrenSize() === 1) {
+    const first = root.getFirstChild()
+    if ($isImageNode(first)) return false
+    return first?.getTextContent().trim() === ""
+  }
+  return root.getTextContent().trim() === "" && countImageNodes() === 0
+}
+
 type BlockType = "paragraph" | "h3" | "bullet" | "number"
 
 function ToolbarButton({
   onClick,
   active,
+  disabled,
   label,
   children,
 }: {
   onClick: () => void
   active?: boolean
+  disabled?: boolean
   label: string
   children: React.ReactNode
 }) {
@@ -128,10 +186,11 @@ function ToolbarButton({
       type="button"
       aria-label={label}
       title={label}
+      disabled={disabled}
       onMouseDown={(event) => event.preventDefault()}
       onClick={onClick}
       className={cn(
-        "flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
+        "flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50",
         active && "bg-accent text-foreground"
       )}
     >
@@ -140,7 +199,37 @@ function ToolbarButton({
   )
 }
 
-function Toolbar() {
+function ImageToolbarButton() {
+  const { insertImageFile, isUploading } = useImageEditorContext()
+  const inputRef = React.useRef<HTMLInputElement>(null)
+
+  return (
+    <>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        className="hidden"
+        onChange={(event) => {
+          const file = event.target.files?.[0]
+          if (file) {
+            void insertImageFile(file)
+          }
+          event.target.value = ""
+        }}
+      />
+      <ToolbarButton
+        label="Insert image"
+        disabled={isUploading}
+        onClick={() => inputRef.current?.click()}
+      >
+        <ImageIcon className="h-4 w-4" />
+      </ToolbarButton>
+    </>
+  )
+}
+
+function Toolbar({ enableImages }: { enableImages?: boolean }) {
   const [editor] = useLexicalComposerContext()
   const [formats, setFormats] = React.useState({
     bold: false,
@@ -277,7 +366,96 @@ function Toolbar() {
       >
         <ListOrdered className="h-4 w-4" />
       </ToolbarButton>
+      {enableImages && (
+        <>
+          <span className="mx-1 h-5 w-px bg-border" />
+          <ImageToolbarButton />
+        </>
+      )}
     </div>
+  )
+}
+
+function ImageEditorShell({
+  uploadContext,
+  editable,
+  children,
+}: {
+  uploadContext?: ImageUploadContext
+  editable: boolean
+  children: React.ReactNode
+}) {
+  const [editor] = useLexicalComposerContext()
+  const [previewUrls, setPreviewUrls] = React.useState(
+    () => new Map<string, string>()
+  )
+  const [isUploading, setIsUploading] = React.useState(false)
+
+  const registerPreviewUrl = React.useCallback(
+    (attachmentId: string, url: string) => {
+      setPreviewUrls((current) => {
+        const next = new Map(current)
+        next.set(attachmentId, url)
+        return next
+      })
+    },
+    []
+  )
+
+  const insertImageFile = React.useCallback(
+    async (file: File) => {
+      if (!uploadContext) return
+
+      const imageCount = editor.getEditorState().read(() => countImageNodes())
+      if (imageCount >= MAX_INLINE_IMAGES_PER_CONTENT) {
+        toast({
+          title: "Image limit reached.",
+          description: `You can add up to ${MAX_INLINE_IMAGES_PER_CONTENT} images.`,
+          variant: "destructive",
+        })
+        return
+      }
+
+      setIsUploading(true)
+      try {
+        const attachment = await uploadInlineImage({
+          boardId: uploadContext.boardId,
+          cardId: uploadContext.cardId,
+          file,
+        })
+        registerPreviewUrl(attachment.id, URL.createObjectURL(file))
+        insertImageNode(editor, attachment.id)
+      } catch (error) {
+        toast({
+          title: "Image upload failed.",
+          description:
+            error instanceof Error ? error.message : "Please try again.",
+          variant: "destructive",
+        })
+        throw error
+      } finally {
+        setIsUploading(false)
+      }
+    },
+    [editor, registerPreviewUrl, uploadContext]
+  )
+
+  if (!uploadContext) {
+    return <>{children}</>
+  }
+
+  return (
+    <ImageEditorProvider
+      value={{
+        uploadContext,
+        previewUrls,
+        registerPreviewUrl,
+        insertImageFile: editable ? insertImageFile : async () => undefined,
+        isUploading,
+      }}
+    >
+      {children}
+    </ImageEditorProvider>
   )
 }
 
@@ -288,6 +466,7 @@ export function RichTextEditor({
   placeholder = "Add a more detailed description…",
   className,
   mentionableUsers,
+  uploadContext,
 }: {
   value?: string | null
   editable?: boolean
@@ -295,6 +474,7 @@ export function RichTextEditor({
   placeholder?: string
   className?: string
   mentionableUsers?: MentionableUser[]
+  uploadContext?: ImageUploadContext
 }) {
   const initialConfig = {
     namespace: "card-description",
@@ -310,52 +490,52 @@ export function RichTextEditor({
   function handleChange(editorState: EditorState, editor: LexicalEditor) {
     if (!onChange) return
     editorState.read(() => {
-      const root = $getRoot()
-      const isEmpty =
-        root.getChildrenSize() === 1 &&
-        root.getFirstChild()?.getTextContent().trim() === ""
+      const isEmpty = isEditorContentEmpty()
       onChange(isEmpty ? "" : JSON.stringify(editor.getEditorState().toJSON()))
     })
   }
 
   return (
     <LexicalComposer initialConfig={initialConfig}>
-      <div
-        className={cn(
-          "overflow-hidden rounded-md border bg-background",
-          !editable && "border-transparent bg-transparent",
-          className
-        )}
-      >
-        {editable && <Toolbar />}
-        <div className="relative">
-          <RichTextPlugin
-            contentEditable={
-              <ContentEditable
-                className={cn(
-                  "min-h-[120px] w-full resize-none px-3 py-2 text-sm leading-6 outline-none",
-                  !editable && "min-h-0 px-0 py-0"
-                )}
-              />
-            }
-            placeholder={
-              <div className="pointer-events-none absolute left-3 top-2 select-none text-sm text-muted-foreground">
-                {editable ? placeholder : "No description yet."}
-              </div>
-            }
-            ErrorBoundary={LexicalErrorBoundary}
-          />
+      <ImageEditorShell uploadContext={uploadContext} editable={editable}>
+        <div
+          className={cn(
+            "overflow-hidden rounded-md border bg-background",
+            !editable && "border-transparent bg-transparent",
+            className
+          )}
+        >
+          {editable && <Toolbar enableImages={!!uploadContext} />}
+          <div className="relative">
+            <RichTextPlugin
+              contentEditable={
+                <ContentEditable
+                  className={cn(
+                    "min-h-[120px] w-full resize-none px-3 py-2 text-sm leading-6 outline-none",
+                    !editable && "min-h-0 px-0 py-0"
+                  )}
+                />
+              }
+              placeholder={
+                <div className="pointer-events-none absolute left-3 top-2 select-none text-sm text-muted-foreground">
+                  {editable ? placeholder : "No description yet."}
+                </div>
+              }
+              ErrorBoundary={LexicalErrorBoundary}
+            />
+          </div>
         </div>
-      </div>
-      <HistoryPlugin />
-      <ListPlugin />
-      <LinkPlugin />
-      {editable && mentionableUsers !== undefined && (
-        <MentionsPlugin mentionableUsers={mentionableUsers} />
-      )}
-      {editable && (
-        <OnChangePlugin onChange={handleChange} ignoreSelectionChange />
-      )}
+        <HistoryPlugin />
+        <ListPlugin />
+        <LinkPlugin />
+        {editable && mentionableUsers !== undefined && (
+          <MentionsPlugin mentionableUsers={mentionableUsers} />
+        )}
+        {editable && uploadContext && <ImagesPlugin />}
+        {editable && (
+          <OnChangePlugin onChange={handleChange} ignoreSelectionChange />
+        )}
+      </ImageEditorShell>
     </LexicalComposer>
   )
 }

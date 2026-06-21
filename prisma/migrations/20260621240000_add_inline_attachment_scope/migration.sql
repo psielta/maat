@@ -1,0 +1,1 @@
+ALTER TYPE "BoardAttachmentScope" ADD VALUE 'INLINE';

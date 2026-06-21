@@ -187,6 +187,7 @@ enum BoardAttachmentStatus {
 enum BoardAttachmentScope {
   CARD
   COMMENT
+  INLINE
 }
 
 model BoardCardAttachment {

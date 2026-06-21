@@ -28,6 +28,10 @@ export function lexicalToPlainText(value: string | null | undefined): string {
       parts.push(`@${node.displayName}`)
       return
     }
+    if (node.type === "image") {
+      parts.push("[image]")
+      return
+    }
 
     if (typeof node.text === "string") {
       parts.push(node.text)

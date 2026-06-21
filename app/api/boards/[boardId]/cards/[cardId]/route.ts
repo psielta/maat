@@ -3,6 +3,12 @@ import * as z from "zod"
 import { getCurrentUserId, userCanEditBoard } from "@/lib/board-access"
 import { recordBoardEvent } from "@/lib/board-events"
 import { db } from "@/lib/db"
+import { extractInlineImageIds } from "@/lib/lexical-inline-images"
+import {
+  cleanupOrphanInlineImages,
+  InlineImageValidationError,
+  promoteInlineImages,
+} from "@/lib/promote-inline-images"
 import { boardCardPatchSchema } from "@/lib/validations/board"
 
 const routeContextSchema = z.object({
@@ -53,6 +59,22 @@ export async function PATCH(req: Request, context: RouteContext) {
 
     const json = await req.json()
     const body = boardCardPatchSchema.parse(json)
+
+    if (body.description !== undefined) {
+      try {
+        await promoteInlineImages({
+          cardId: params.cardId,
+          userId,
+          content: body.description,
+        })
+      } catch (error) {
+        if (error instanceof InlineImageValidationError) {
+          return Response.json({ message: error.message }, { status: 422 })
+        }
+        throw error
+      }
+    }
+
     const card = await db.boardCard.update({
       where: {
         id: params.cardId,
@@ -70,6 +92,15 @@ export async function PATCH(req: Request, context: RouteContext) {
         listId: true,
       },
     })
+
+    if (body.description !== undefined) {
+      await cleanupOrphanInlineImages({
+        cardId: params.cardId,
+        userId,
+        referencedIds: extractInlineImageIds(body.description ?? ""),
+      })
+    }
+
     await recordBoardEvent({
       boardId: params.boardId,
       actorId: userId,

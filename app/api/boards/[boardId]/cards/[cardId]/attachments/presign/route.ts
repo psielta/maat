@@ -8,6 +8,7 @@ import { buildStorageKey, createPresignedPutUrl } from "@/lib/storage"
 import {
   boardAttachmentPresignSchema,
   MAX_ATTACHMENTS_PER_TARGET,
+  MAX_INLINE_IMAGES_PER_CONTENT,
 } from "@/lib/validations/board"
 
 const routeContextSchema = z.object({
@@ -48,18 +49,37 @@ export async function POST(req: Request, context: RouteContext) {
     const json = await req.json()
     const body = boardAttachmentPresignSchema.parse(json)
 
+    const scope =
+      body.target === "card"
+        ? "CARD"
+        : body.target === "comment"
+          ? "COMMENT"
+          : "INLINE"
+
+    const limit =
+      body.target === "inline"
+        ? MAX_INLINE_IMAGES_PER_CONTENT
+        : MAX_ATTACHMENTS_PER_TARGET
+
     const existingCount = await db.boardCardAttachment.count({
       where: {
         cardId: params.cardId,
-        scope: body.target === "card" ? "CARD" : "COMMENT",
+        scope,
         status: { in: ["PENDING", "READY"] },
-        ...(body.target === "comment" ? { uploadedById: userId } : {}),
+        ...(body.target === "comment" || body.target === "inline"
+          ? { uploadedById: userId }
+          : {}),
       },
     })
 
-    if (existingCount >= MAX_ATTACHMENTS_PER_TARGET) {
+    if (existingCount >= limit) {
       return Response.json(
-        { message: "Attachment limit reached for this target." },
+        {
+          message:
+            body.target === "inline"
+              ? "Inline image limit reached for this card."
+              : "Attachment limit reached for this target.",
+        },
         { status: 422 }
       )
     }
@@ -70,7 +90,7 @@ export async function POST(req: Request, context: RouteContext) {
         mimeType: body.mimeType || "application/octet-stream",
         sizeBytes: BigInt(body.sizeBytes),
         storageKey: `pending/${randomUUID()}`,
-        scope: body.target === "card" ? "CARD" : "COMMENT",
+        scope,
         cardId: params.cardId,
         uploadedById: userId,
       },

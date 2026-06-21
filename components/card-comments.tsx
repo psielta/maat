@@ -3,15 +3,14 @@
 import * as React from "react"
 import { formatDistanceToNow } from "date-fns"
 
-import { cn } from "@/lib/utils"
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/components/ui/use-toast"
+import { RichTextEditor } from "@/components/rich-text-editor"
 
 type CommentModel = {
   id: string
@@ -47,6 +46,7 @@ export function CardComments({
   const [comments, setComments] = React.useState<CommentModel[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
   const [draft, setDraft] = React.useState("")
+  const [composerKey, setComposerKey] = React.useState(0)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
 
   const load = React.useCallback(async () => {
@@ -60,20 +60,13 @@ export function CardComments({
   }, [boardId, cardId])
 
   React.useEffect(() => {
-    let active = true
     setIsLoading(true)
-    void load().finally(() => {
-      if (!active) return
-    })
-    return () => {
-      active = false
-    }
+    void load()
   }, [load, refreshSignal])
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const content = draft.trim()
-    if (!content) return
+    if (!draft.trim()) return
 
     setIsSubmitting(true)
     const response = await fetch(
@@ -81,7 +74,7 @@ export function CardComments({
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content: draft }),
       }
     )
     setIsSubmitting(false)
@@ -97,6 +90,7 @@ export function CardComments({
     const comment: CommentModel = await response.json()
     setComments((current) => [...current, comment])
     setDraft("")
+    setComposerKey((value) => value + 1)
   }
 
   async function remove(id: string) {
@@ -119,27 +113,23 @@ export function CardComments({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {canComment && (
         <form onSubmit={submit} className="space-y-2">
-          <Textarea
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            onKeyDown={(event) => {
-              if (
-                (event.metaKey || event.ctrlKey) &&
-                event.key === "Enter" &&
-                draft.trim()
-              ) {
-                event.preventDefault()
-                event.currentTarget.form?.requestSubmit()
-              }
-            }}
+          <RichTextEditor
+            key={composerKey}
+            value=""
+            editable
+            onChange={setDraft}
             placeholder="Write a comment…"
-            className="min-h-[72px] resize-none"
+            className="bg-background"
           />
           <div className="flex justify-end">
-            <Button type="submit" size="sm" disabled={!draft.trim() || isSubmitting}>
+            <Button
+              type="submit"
+              size="sm"
+              disabled={!draft.trim() || isSubmitting}
+            >
               Comment
             </Button>
           </div>
@@ -179,17 +169,13 @@ export function CardComments({
                     </span>
                   </div>
                   <div className="mt-1 rounded-lg bg-muted px-3 py-2 text-sm">
-                    <p className="whitespace-pre-wrap break-words">
-                      {comment.content}
-                    </p>
+                    <RichTextEditor value={comment.content} editable={false} />
                   </div>
                   {canRemove && (
                     <button
                       type="button"
                       onClick={() => void remove(comment.id)}
-                      className={cn(
-                        "mt-1 text-xs text-muted-foreground transition-colors hover:text-destructive"
-                      )}
+                      className="mt-1 text-xs text-muted-foreground transition-colors hover:text-destructive"
                     >
                       Delete
                     </button>

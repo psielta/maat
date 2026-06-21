@@ -31,8 +31,9 @@ export const boardCardPatchSchema = z.object({
   description: z.string().trim().max(50000).optional().nullable(),
 })
 
+// `content` holds serialized rich-text (Lexical) editor state.
 export const boardCardCommentCreateSchema = z.object({
-  content: z.string().trim().min(1).max(5000),
+  content: z.string().trim().min(1).max(50000),
 })
 
 export const boardReorderSchema = z.object({

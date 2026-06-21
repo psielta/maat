@@ -7,6 +7,7 @@ import {
 } from "@/lib/board-access"
 import { recordBoardEvent } from "@/lib/board-events"
 import { db } from "@/lib/db"
+import { lexicalToPlainText } from "@/lib/lexical-text"
 import { createNotifications } from "@/lib/notifications"
 import { boardCardCommentCreateSchema } from "@/lib/validations/board"
 
@@ -150,7 +151,7 @@ export async function POST(req: Request, context: RouteContext) {
         cardId: card.id,
         cardTitle: card.title,
         actorName: comment.author.name || comment.author.email || "Someone",
-        snippet: body.content.slice(0, 140),
+        snippet: lexicalToPlainText(body.content).slice(0, 140),
       },
     })
 

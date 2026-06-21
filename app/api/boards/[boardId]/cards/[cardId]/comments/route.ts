@@ -1,5 +1,7 @@
 import * as z from "zod"
 
+import { serializeAttachment } from "@/lib/attachment-utils"
+import { attachmentSelect } from "@/lib/board-attachments"
 import {
   getCurrentUserId,
   userCanEditBoard,
@@ -37,7 +39,43 @@ const commentSelect = {
       image: true,
     },
   },
+  attachments: {
+    where: { status: "READY" },
+    select: attachmentSelect,
+    orderBy: { createdAt: "asc" as const },
+  },
 } as const
+
+function serializeComment(
+  comment: {
+    id: string
+    content: string
+    createdAt: Date
+    authorId: string
+    author: {
+      name: string | null
+      email: string | null
+      image: string | null
+    }
+    attachments: Array<{
+      id: string
+      fileName: string
+      mimeType: string
+      sizeBytes: bigint
+      createdAt: Date
+      uploadedById: string
+    }>
+  }
+) {
+  return {
+    id: comment.id,
+    content: comment.content,
+    createdAt: comment.createdAt.toISOString(),
+    authorId: comment.authorId,
+    author: comment.author,
+    attachments: comment.attachments.map(serializeAttachment),
+  }
+}
 
 export async function GET(req: Request, context: RouteContext) {
   try {
@@ -68,7 +106,7 @@ export async function GET(req: Request, context: RouteContext) {
       orderBy: { createdAt: "asc" },
     })
 
-    return Response.json(comments)
+    return Response.json(comments.map(serializeComment))
   } catch (error) {
     if (error instanceof z.ZodError) {
       return Response.json(error.issues, { status: 422 })
@@ -119,14 +157,60 @@ export async function POST(req: Request, context: RouteContext) {
 
     const json = await req.json()
     const body = boardCardCommentCreateSchema.parse(json)
+    const attachmentIds = body.attachmentIds ?? []
 
-    const comment = await db.boardCardComment.create({
-      data: {
-        cardId: params.cardId,
-        authorId: userId,
-        content: body.content,
-      },
-      select: commentSelect,
+    if (attachmentIds.length > 0) {
+      const validAttachments = await db.boardCardAttachment.findMany({
+        where: {
+          id: { in: attachmentIds },
+          cardId: params.cardId,
+          commentId: null,
+          uploadedById: userId,
+          scope: "COMMENT",
+          status: "PENDING",
+        },
+        select: { id: true },
+      })
+
+      if (validAttachments.length !== attachmentIds.length) {
+        return Response.json(
+          { message: "One or more attachments are invalid." },
+          { status: 422 }
+        )
+      }
+    }
+
+    const comment = await db.$transaction(async (tx) => {
+      const created = await tx.boardCardComment.create({
+        data: {
+          cardId: params.cardId,
+          authorId: userId,
+          content: body.content,
+        },
+        select: commentSelect,
+      })
+
+      if (attachmentIds.length > 0) {
+        await tx.boardCardAttachment.updateMany({
+          where: {
+            id: { in: attachmentIds },
+            cardId: params.cardId,
+            commentId: null,
+            uploadedById: userId,
+            scope: "COMMENT",
+            status: "PENDING",
+          },
+          data: {
+            commentId: created.id,
+            status: "READY",
+          },
+        })
+      }
+
+      return tx.boardCardComment.findUniqueOrThrow({
+        where: { id: created.id },
+        select: commentSelect,
+      })
     })
 
     await recordBoardEvent({
@@ -155,7 +239,7 @@ export async function POST(req: Request, context: RouteContext) {
       },
     })
 
-    return Response.json(comment, { status: 201 })
+    return Response.json(serializeComment(comment), { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return Response.json(error.issues, { status: 422 })

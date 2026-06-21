@@ -53,9 +53,27 @@ export const boardCardPatchSchema = z.object({
   description: z.string().trim().max(50000).optional().nullable(),
 })
 
+export const MAX_ATTACHMENT_SIZE_BYTES = 125_829_120
+export const MAX_ATTACHMENTS_PER_TARGET = 20
+
+export const boardAttachmentPresignSchema = z.object({
+  fileName: z.string().trim().min(1).max(255),
+  mimeType: z.string().trim().min(1).max(255),
+  sizeBytes: z
+    .number()
+    .int()
+    .positive()
+    .max(MAX_ATTACHMENT_SIZE_BYTES),
+  target: z.enum(["card", "comment"]),
+})
+
 // `content` holds serialized rich-text (Lexical) editor state.
 export const boardCardCommentCreateSchema = z.object({
   content: z.string().trim().min(1).max(50000),
+  attachmentIds: z
+    .array(z.string().min(1))
+    .max(MAX_ATTACHMENTS_PER_TARGET)
+    .optional(),
 })
 
 export const boardReorderSchema = z.object({

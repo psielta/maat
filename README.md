@@ -39,12 +39,14 @@ Todas as portas ficam na faixa `14500-14999`.
 | MailHog SMTP | `14525` |
 | MailHog UI | `14580` |
 | Redis | `14679` |
+| MinIO S3 API | `14590` |
+| MinIO Console | `14591` |
 
 ## Setup Local
 
 ```bash
 pnpm install
-docker compose up -d postgres mailhog redis
+docker compose up -d postgres mailhog redis minio minio
 pnpm exec prisma migrate deploy
 pnpm dev
 ```
@@ -66,9 +68,17 @@ REDIS_URL="redis://localhost:14679"
 EMAIL_FROM="Maat <noreply@example.com>"
 SMTP_HOST=localhost
 SMTP_PORT=14525
+S3_ENDPOINT=http://localhost:14590
+S3_ACCESS_KEY=maat
+S3_SECRET_KEY=maatminio1
+S3_BUCKET=maat-uploads
+S3_REGION=us-east-1
+S3_FORCE_PATH_STYLE=true
 ```
 
 `RESEND_API_KEY` é necessário apenas para envio real em produção. Em dev, o provider usa MailHog.
+
+MinIO Console fica em `http://localhost:14591`.
 
 ## Modelo de Produto
 
@@ -108,7 +118,7 @@ pnpm build
 Para atualizar o banco local:
 
 ```bash
-docker compose up -d postgres mailhog redis
+docker compose up -d postgres mailhog redis minio
 pnpm exec prisma migrate deploy
 ```
 

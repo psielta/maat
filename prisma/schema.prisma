@@ -57,6 +57,7 @@ model User {
   boardMemberships BoardMember[]
   boardEvents      BoardEvent[]
   cardComments     BoardCardComment[]
+  cardAttachments  BoardCardAttachment[]
   notifications      Notification[] @relation("NotificationUser")
   actedNotifications Notification[] @relation("NotificationActor")
 
@@ -138,8 +139,9 @@ model BoardCard {
   updatedAt   DateTime  @updatedAt @map(name: "updated_at")
   listId      String    @map(name: "list_id")
 
-  list     BoardList          @relation(fields: [listId], references: [id], onDelete: Cascade)
-  comments BoardCardComment[]
+  list        BoardList              @relation(fields: [listId], references: [id], onDelete: Cascade)
+  comments    BoardCardComment[]
+  attachments BoardCardAttachment[]
 
   @@index([listId])
   @@index([displayId])
@@ -168,12 +170,46 @@ model BoardCardComment {
   cardId    String   @map(name: "card_id")
   authorId  String   @map(name: "author_id")
 
-  card   BoardCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  author User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  card        BoardCard             @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  author      User                  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  attachments BoardCardAttachment[]
 
   @@index([cardId, createdAt])
   @@index([authorId])
   @@map(name: "board_card_comments")
+}
+
+enum BoardAttachmentStatus {
+  PENDING
+  READY
+}
+
+enum BoardAttachmentScope {
+  CARD
+  COMMENT
+}
+
+model BoardCardAttachment {
+  id           String                @id @default(cuid())
+  fileName     String                @map(name: "file_name")
+  mimeType     String                @map(name: "mime_type")
+  sizeBytes    BigInt                @map(name: "size_bytes")
+  storageKey   String                @unique @map(name: "storage_key")
+  scope        BoardAttachmentScope  @default(CARD)
+  status       BoardAttachmentStatus @default(PENDING)
+  createdAt    DateTime              @default(now()) @map(name: "created_at")
+  updatedAt    DateTime              @updatedAt @map(name: "updated_at")
+  cardId       String                @map(name: "card_id")
+  commentId    String?               @map(name: "comment_id")
+  uploadedById String                @map(name: "uploaded_by_id")
+
+  card       BoardCard         @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  comment    BoardCardComment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  uploadedBy User              @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+
+  @@index([cardId, createdAt])
+  @@index([commentId])
+  @@map(name: "board_card_attachments")
 }
 
 model Notification {

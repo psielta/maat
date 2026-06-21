@@ -3,6 +3,8 @@
 import * as React from "react"
 import { formatDistanceToNow } from "date-fns"
 
+import { AttachmentList } from "@/components/attachment-list"
+import { AttachmentUploader } from "@/components/attachment-uploader"
 import {
   Avatar,
   AvatarFallback,
@@ -11,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { toast } from "@/components/ui/use-toast"
 import { RichTextEditor } from "@/components/rich-text-editor"
+import type { AttachmentModel } from "@/lib/upload-attachment"
 
 type CommentModel = {
   id: string
@@ -22,6 +25,7 @@ type CommentModel = {
     email: string | null
     image: string | null
   }
+  attachments: AttachmentModel[]
 }
 
 function initials(author: CommentModel["author"]) {
@@ -48,6 +52,9 @@ export function CardComments({
   const [draft, setDraft] = React.useState("")
   const [composerKey, setComposerKey] = React.useState(0)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const [pendingAttachments, setPendingAttachments] = React.useState<
+    AttachmentModel[]
+  >([])
 
   const load = React.useCallback(async () => {
     const response = await fetch(
@@ -64,36 +71,7 @@ export function CardComments({
     void load()
   }, [load, refreshSignal])
 
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (!draft.trim()) return
-
-    setIsSubmitting(true)
-    const response = await fetch(
-      `/api/boards/${boardId}/cards/${cardId}/comments`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: draft }),
-      }
-    )
-    setIsSubmitting(false)
-
-    if (!response.ok) {
-      return toast({
-        title: "Something went wrong.",
-        description: "Your comment was not posted. Please try again.",
-        variant: "destructive",
-      })
-    }
-
-    const comment: CommentModel = await response.json()
-    setComments((current) => [...current, comment])
-    setDraft("")
-    setComposerKey((value) => value + 1)
-  }
-
-  async function remove(id: string) {
+  async function removeComment(id: string) {
     const previous = comments
     setComments((current) => current.filter((comment) => comment.id !== id))
 
@@ -112,6 +90,90 @@ export function CardComments({
     }
   }
 
+  async function removeAttachment(commentId: string, attachmentId: string) {
+    const previous = comments
+    setComments((current) =>
+      current.map((comment) =>
+        comment.id === commentId
+          ? {
+              ...comment,
+              attachments: comment.attachments.filter(
+                (attachment) => attachment.id !== attachmentId
+              ),
+            }
+          : comment
+      )
+    )
+
+    const response = await fetch(
+      `/api/boards/${boardId}/cards/${cardId}/attachments/${attachmentId}`,
+      { method: "DELETE" }
+    )
+
+    if (!response.ok) {
+      setComments(previous)
+      toast({
+        title: "Something went wrong.",
+        description: "The attachment was not removed. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  async function removePendingAttachment(attachmentId: string) {
+    const previous = pendingAttachments
+    setPendingAttachments((current) =>
+      current.filter((attachment) => attachment.id !== attachmentId)
+    )
+
+    const response = await fetch(
+      `/api/boards/${boardId}/cards/${cardId}/attachments/${attachmentId}`,
+      { method: "DELETE" }
+    )
+
+    if (!response.ok) {
+      setPendingAttachments(previous)
+      toast({
+        title: "Something went wrong.",
+        description: "The attachment was not removed. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!draft.trim()) return
+
+    setIsSubmitting(true)
+    const response = await fetch(
+      `/api/boards/${boardId}/cards/${cardId}/comments`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: draft,
+          attachmentIds: pendingAttachments.map((attachment) => attachment.id),
+        }),
+      }
+    )
+    setIsSubmitting(false)
+
+    if (!response.ok) {
+      return toast({
+        title: "Something went wrong.",
+        description: "Your comment was not posted. Please try again.",
+        variant: "destructive",
+      })
+    }
+
+    const comment: CommentModel = await response.json()
+    setComments((current) => [...current, comment])
+    setDraft("")
+    setPendingAttachments([])
+    setComposerKey((value) => value + 1)
+  }
+
   return (
     <div className="space-y-4">
       {canComment && (
@@ -124,6 +186,25 @@ export function CardComments({
             placeholder="Write a comment…"
             className="bg-background"
           />
+          <AttachmentUploader
+            boardId={boardId}
+            cardId={cardId}
+            target="comment"
+            disabled={isSubmitting}
+            onUploaded={(attachment) =>
+              setPendingAttachments((current) => [...current, attachment])
+            }
+          />
+          {pendingAttachments.length > 0 && (
+            <AttachmentList
+              boardId={boardId}
+              cardId={cardId}
+              attachments={pendingAttachments}
+              currentUserId={currentUserId}
+              canManage={canManage}
+              onRemove={removePendingAttachment}
+            />
+          )}
           <div className="flex justify-end">
             <Button
               type="submit"
@@ -144,6 +225,7 @@ export function CardComments({
         <ul className="space-y-3">
           {comments.map((comment) => {
             const canRemove = comment.authorId === currentUserId || canManage
+            const canEditAttachments = canComment || canManage
             return (
               <li key={comment.id} className="flex gap-2.5">
                 <Avatar className="mt-0.5 h-7 w-7 shrink-0">
@@ -171,10 +253,32 @@ export function CardComments({
                   <div className="mt-1 rounded-lg bg-muted px-3 py-2 text-sm">
                     <RichTextEditor value={comment.content} editable={false} />
                   </div>
+                  {comment.attachments.length > 0 && (
+                    <div className="mt-2">
+                      <AttachmentList
+                        boardId={boardId}
+                        cardId={cardId}
+                        attachments={comment.attachments}
+                        currentUserId={currentUserId}
+                        canManage={canManage}
+                        onRemove={
+                          canEditAttachments
+                            ? (attachmentId) =>
+                                void removeAttachment(comment.id, attachmentId)
+                            : undefined
+                        }
+                        canDeleteAttachment={(attachment) =>
+                          comment.authorId === currentUserId ||
+                          canManage ||
+                          attachment.uploadedById === currentUserId
+                        }
+                      />
+                    </div>
+                  )}
                   {canRemove && (
                     <button
                       type="button"
-                      onClick={() => void remove(comment.id)}
+                      onClick={() => void removeComment(comment.id)}
                       className="mt-1 text-xs text-muted-foreground transition-colors hover:text-destructive"
                     >
                       Delete

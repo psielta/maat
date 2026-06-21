@@ -64,6 +64,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/components/ui/use-toast"
 import { BoardSwitcher, type BoardSummary } from "@/components/board-switcher"
+import { CardAttachments } from "@/components/card-attachments"
 import { CardComments } from "@/components/card-comments"
 import { Icons } from "@/components/icons"
 import { NotificationBell } from "@/components/notification-bell"
@@ -729,7 +730,7 @@ export function BoardView({
       }
       // Comment activity doesn't change board/list/card data, so only nudge
       // the open card's comments instead of refetching the whole board.
-      if (action.startsWith("comment.")) {
+      if (action.startsWith("comment.") || action.startsWith("attachment.")) {
         setEventSignal((value) => value + 1)
       } else {
         router.refresh()
@@ -1729,6 +1730,15 @@ export function BoardView({
                       )}
                     </div>
                   </section>
+
+                  <CardAttachments
+                    boardId={board.id}
+                    cardId={selectedCard.id}
+                    currentUserId={user.id}
+                    canUpload={access.canEdit}
+                    canManage={access.canManage}
+                    refreshSignal={eventSignal}
+                  />
                 </div>
 
                 {/* Side column: comments and activity */}

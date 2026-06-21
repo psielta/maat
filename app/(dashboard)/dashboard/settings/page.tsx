@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/session"
 import { siteConfig } from "@/config/site"
 import { DashboardHeader } from "@/components/header"
 import { Icons } from "@/components/icons"
+import { NotificationBell } from "@/components/notification-bell"
 import { DashboardShell } from "@/components/shell"
 import { UserAccountNav } from "@/components/user-account-nav"
 import { UserNameForm } from "@/components/user-name-form"
@@ -32,9 +33,12 @@ export default async function SettingsPage() {
           <Icons.logo className="h-5 w-5 text-primary" />
           <span className="text-lg">{siteConfig.name}</span>
         </Link>
-        <UserAccountNav
-          user={{ name: user.name, image: user.image, email: user.email }}
-        />
+        <div className="flex items-center gap-1.5">
+          <NotificationBell />
+          <UserAccountNav
+            user={{ name: user.name, image: user.image, email: user.email }}
+          />
+        </div>
       </header>
       <div className="flex-1 overflow-y-auto">
         <DashboardShell className="container max-w-3xl py-8">

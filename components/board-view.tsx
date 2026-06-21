@@ -52,7 +52,10 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/components/ui/use-toast"
 import { BoardSwitcher, type BoardSummary } from "@/components/board-switcher"
+import { CardComments } from "@/components/card-comments"
 import { Icons } from "@/components/icons"
+import { NotificationBell } from "@/components/notification-bell"
+import { RichTextEditor } from "@/components/rich-text-editor"
 import { UserAccountNav } from "@/components/user-account-nav"
 
 export type BoardCardModel = {
@@ -636,7 +639,12 @@ export function BoardView({
 }: {
   board: BoardModel
   access: BoardAccessModel
-  user: { name: string | null; email: string | null; image: string | null }
+  user: {
+    id: string
+    name: string | null
+    email: string | null
+    image: string | null
+  }
   boards: BoardSummary[]
 }) {
   const router = useRouter()
@@ -659,6 +667,7 @@ export function BoardView({
     null
   )
   const [overListId, setOverListId] = React.useState<string | null>(null)
+  const [eventSignal, setEventSignal] = React.useState(0)
   const [selectedCard, setSelectedCard] =
     React.useState<BoardCardModel | null>(null)
   const [cardTitleDraft, setCardTitleDraft] = React.useState("")
@@ -700,8 +709,20 @@ export function BoardView({
 
     events.addEventListener("ready", () => setIsRealtimeConnected(true))
     events.addEventListener("error", () => setIsRealtimeConnected(false))
-    events.addEventListener("board:update", () => {
-      router.refresh()
+    events.addEventListener("board:update", (event) => {
+      let action = ""
+      try {
+        action = JSON.parse((event as MessageEvent).data)?.action ?? ""
+      } catch {
+        action = ""
+      }
+      // Comment activity doesn't change board/list/card data, so only nudge
+      // the open card's comments instead of refetching the whole board.
+      if (action.startsWith("comment.")) {
+        setEventSignal((value) => value + 1)
+      } else {
+        router.refresh()
+      }
     })
 
     return () => {
@@ -1131,8 +1152,9 @@ export function BoardView({
         }))
       )
     )
-    setSelectedCard(null)
+    setSelectedCard(card)
     router.refresh()
+    return toast({ description: "Card saved." })
   }
 
   async function deleteSelectedCard() {
@@ -1373,6 +1395,7 @@ export function BoardView({
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
+            <NotificationBell />
             <span className="hidden h-5 w-px bg-border sm:block" />
             <UserAccountNav user={user} />
           </div>
@@ -1582,42 +1605,62 @@ export function BoardView({
 
       {/* Card detail dialog */}
       <Dialog open={!!selectedCard} onOpenChange={() => setSelectedCard(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{access.canEdit ? "Edit card" : "Card"}</DialogTitle>
-            <DialogDescription className="sr-only">
-              Update the card title and notes.
+        <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Card details</DialogTitle>
+            <DialogDescription>
+              Edit the card title, description and comments.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4">
-            <Input
-              value={cardTitleDraft}
-              onChange={(event) => setCardTitleDraft(event.target.value)}
-              placeholder="Card title"
-              disabled={!access.canEdit}
-            />
-            <Textarea
-              value={cardDescriptionDraft}
-              onChange={(event) => setCardDescriptionDraft(event.target.value)}
-              placeholder="Description"
-              className="min-h-[140px]"
-              disabled={!access.canEdit}
-            />
-          </div>
-          {access.canEdit && (
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={deleteSelectedCard}
-              >
-                <Icons.trash className="mr-2 h-4 w-4" />
-                Delete
-              </Button>
-              <Button type="button" onClick={saveSelectedCard}>
-                Save card
-              </Button>
-            </DialogFooter>
+          {selectedCard && (
+            <div className="grid gap-6">
+              <Input
+                value={cardTitleDraft}
+                onChange={(event) => setCardTitleDraft(event.target.value)}
+                placeholder="Card title"
+                disabled={!access.canEdit}
+                className="h-auto border-none px-0 pr-8 text-xl font-semibold shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:cursor-default disabled:opacity-100"
+              />
+
+              <section>
+                <h3 className="mb-2 text-sm font-semibold">Description</h3>
+                <RichTextEditor
+                  key={selectedCard.id}
+                  value={selectedCard.description}
+                  editable={access.canEdit}
+                  onChange={setCardDescriptionDraft}
+                />
+                {access.canEdit && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <Button type="button" size="sm" onClick={saveSelectedCard}>
+                      Save
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive hover:text-destructive"
+                      onClick={deleteSelectedCard}
+                    >
+                      <Icons.trash className="mr-2 h-4 w-4" />
+                      Delete card
+                    </Button>
+                  </div>
+                )}
+              </section>
+
+              <section>
+                <h3 className="mb-3 text-sm font-semibold">Comments</h3>
+                <CardComments
+                  boardId={board.id}
+                  cardId={selectedCard.id}
+                  currentUserId={user.id}
+                  canComment={access.canEdit}
+                  canManage={access.canManage}
+                  refreshSignal={eventSignal}
+                />
+              </section>
+            </div>
           )}
         </DialogContent>
       </Dialog>

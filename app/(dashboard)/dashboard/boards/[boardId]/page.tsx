@@ -106,7 +106,12 @@ export default async function BoardPage({ params }: BoardPageProps) {
     <BoardView
       board={board}
       access={access}
-      user={{ name: user.name, email: user.email, image: user.image }}
+      user={{
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+      }}
       boards={boards}
     />
   )

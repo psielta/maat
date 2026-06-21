@@ -8,6 +8,7 @@ import { siteConfig } from "@/config/site"
 import { BoardCreateButton } from "@/components/board-create-button"
 import { EmptyPlaceholder } from "@/components/empty-placeholder"
 import { Icons } from "@/components/icons"
+import { NotificationBell } from "@/components/notification-bell"
 import { UserAccountNav } from "@/components/user-account-nav"
 
 export const metadata = {
@@ -50,9 +51,12 @@ export default async function DashboardPage() {
           <Icons.logo className="h-5 w-5 text-primary" />
           <span className="text-lg">{siteConfig.name}</span>
         </Link>
-        <UserAccountNav
-          user={{ name: user.name, image: user.image, email: user.email }}
-        />
+        <div className="flex items-center gap-1.5">
+          <NotificationBell />
+          <UserAccountNav
+            user={{ name: user.name, image: user.image, email: user.email }}
+          />
+        </div>
       </header>
       <div className="flex flex-1 items-center justify-center p-6">
         <EmptyPlaceholder className="mx-auto max-w-md">

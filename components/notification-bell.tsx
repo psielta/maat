@@ -5,6 +5,7 @@ import Link from "next/link"
 import { formatDistanceToNow } from "date-fns"
 import { Bell } from "lucide-react"
 
+import { notifyNotificationsChanged } from "@/lib/notification-events"
 import { cn } from "@/lib/utils"
 import {
   Avatar,
@@ -81,6 +82,7 @@ export function NotificationBell({ className }: { className?: string }) {
     if (unread === 0) return
     setUnread(0)
     await fetch("/api/notifications", { method: "PATCH" })
+    notifyNotificationsChanged()
   }
 
   function onOpenChange(next: boolean) {

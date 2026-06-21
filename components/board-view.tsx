@@ -26,6 +26,7 @@ import {
 import { CSS } from "@dnd-kit/utilities"
 import {
   AlignLeft,
+  Bell,
   MessageSquare,
   MoreHorizontal,
   Pencil,
@@ -71,6 +72,7 @@ import { Icons } from "@/components/icons"
 import { NotificationBell } from "@/components/notification-bell"
 import { RichTextEditor } from "@/components/rich-text-editor"
 import { UserAccountNav } from "@/components/user-account-nav"
+import { useBoardMentionAlerts } from "@/hooks/use-board-mention-alerts"
 
 export type BoardCardModel = {
   id: string
@@ -208,10 +210,12 @@ function CardSurface({
 function SortableCard({
   card,
   canEdit,
+  hasUnreadMention,
   onOpen,
 }: {
   card: BoardCardModel
   canEdit: boolean
+  hasUnreadMention: boolean
   onOpen: (card: BoardCardModel) => void
 }) {
   const {
@@ -236,14 +240,23 @@ function SortableCard({
       }}
       onClick={() => onOpen(card)}
       className={cn(
-        "group rounded-lg border border-black/5 bg-card p-3 text-card-foreground shadow-sm transition-shadow dark:border-white/10",
+        "group relative rounded-lg border border-black/5 bg-card p-3 text-card-foreground shadow-sm transition-shadow dark:border-white/10",
         "hover:border-primary/40 hover:shadow-md",
+        hasUnreadMention && "mention-alert-card",
         canEdit && "cursor-grab active:cursor-grabbing",
         isDragging && "opacity-40"
       )}
       {...(canEdit ? attributes : {})}
       {...(canEdit ? listeners : {})}
     >
+      {hasUnreadMention && (
+        <span
+          className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-sm"
+          aria-label="You were mentioned in a comment"
+        >
+          <Bell className="h-3 w-3" />
+        </span>
+      )}
       {card.displayId && <CardDisplayId displayId={card.displayId} />}
       <p className="break-words text-sm font-medium leading-snug">
         {card.title}
@@ -342,6 +355,7 @@ function BoardListColumn({
   canEdit,
   isOver,
   cardDraft,
+  mentionedCardIds,
   onCardDraftChange,
   onCreateCard,
   onRenameList,
@@ -352,6 +366,7 @@ function BoardListColumn({
   canEdit: boolean
   isOver: boolean
   cardDraft: string
+  mentionedCardIds: Set<string>
   onCardDraftChange: (listId: string, value: string) => void
   onCreateCard: (listId: string) => void
   onRenameList: (listId: string, title: string) => void
@@ -482,6 +497,7 @@ function BoardListColumn({
               key={card.id}
               card={card}
               canEdit={canEdit}
+              hasUnreadMention={mentionedCardIds.has(card.id)}
               onOpen={onOpenCard}
             />
           ))}
@@ -646,6 +662,9 @@ export function BoardView({
   boards: BoardSummary[]
 }) {
   const router = useRouter()
+  const { mentionedCardIds, markCardMentionsRead } = useBoardMentionAlerts(
+    board.id
+  )
   const [title, setTitle] = React.useState(board.title)
   const [description, setDescription] = React.useState(board.description ?? "")
   const [cardIdPattern, setCardIdPattern] = React.useState(
@@ -753,6 +772,11 @@ export function BoardView({
       setCardDescriptionDraft(selectedCard.description ?? "")
     }
   }, [selectedCard])
+
+  function openCard(card: BoardCardModel) {
+    setSelectedCard(card)
+    void markCardMentionsRead(card.id)
+  }
 
   async function saveBoardDetails() {
     if (!access.canEdit) return
@@ -1444,6 +1468,7 @@ export function BoardView({
                   canEdit={access.canEdit}
                   isOver={overListId === list.id && activeType === "card"}
                   cardDraft={cardDrafts[list.id] ?? ""}
+                  mentionedCardIds={mentionedCardIds}
                   onCardDraftChange={(listId, value) =>
                     setCardDrafts((current) => ({
                       ...current,
@@ -1453,7 +1478,7 @@ export function BoardView({
                   onCreateCard={createCard}
                   onRenameList={renameList}
                   onDeleteList={deleteList}
-                  onOpenCard={setSelectedCard}
+                  onOpenCard={openCard}
                 />
               ))}
             </SortableContext>

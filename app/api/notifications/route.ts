@@ -38,7 +38,12 @@ export async function GET() {
   }
 }
 
-export async function PATCH() {
+type NotificationData = {
+  boardId?: string
+  cardId?: string
+}
+
+export async function PATCH(request: Request) {
   try {
     const userId = await getCurrentUserId()
 
@@ -46,10 +51,52 @@ export async function PATCH() {
       return new Response("Unauthorized", { status: 403 })
     }
 
-    await db.notification.updateMany({
-      where: { userId, readAt: null },
-      data: { readAt: new Date() },
-    })
+    let cardId: string | undefined
+    let boardId: string | undefined
+
+    try {
+      const body = await request.json()
+      if (typeof body?.cardId === "string") {
+        cardId = body.cardId
+      }
+      if (typeof body?.boardId === "string") {
+        boardId = body.boardId
+      }
+    } catch {
+      // Empty body marks all unread notifications as read.
+    }
+
+    if (cardId || boardId) {
+      const unread = await db.notification.findMany({
+        where: {
+          userId,
+          readAt: null,
+          type: "comment.mentioned",
+        },
+        select: { id: true, data: true },
+      })
+
+      const ids = unread
+        .filter((item) => {
+          const data = item.data as NotificationData
+          if (cardId && data.cardId !== cardId) return false
+          if (boardId && data.boardId !== boardId) return false
+          return true
+        })
+        .map((item) => item.id)
+
+      if (ids.length > 0) {
+        await db.notification.updateMany({
+          where: { userId, id: { in: ids } },
+          data: { readAt: new Date() },
+        })
+      }
+    } else {
+      await db.notification.updateMany({
+        where: { userId, readAt: null },
+        data: { readAt: new Date() },
+      })
+    }
 
     return new Response(null, { status: 204 })
   } catch {

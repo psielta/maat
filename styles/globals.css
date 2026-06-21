@@ -79,3 +79,20 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
+
+@keyframes mention-alert-pulse {
+  0%,
+  100% {
+    border-color: hsl(var(--destructive));
+    box-shadow: 0 0 0 2px hsl(var(--destructive) / 0.35);
+  }
+  50% {
+    border-color: hsl(var(--destructive) / 0.25);
+    box-shadow: 0 0 0 1px hsl(var(--destructive) / 0.15);
+  }
+}
+
+.mention-alert-card {
+  animation: mention-alert-pulse 1.2s ease-in-out infinite;
+  border-color: hsl(var(--destructive)) !important;
+}

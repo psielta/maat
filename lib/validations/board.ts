@@ -1,5 +1,26 @@
 import * as z from "zod"
 
+import { validateCardIdPattern } from "@/lib/card-id-pattern"
+
+const cardIdPatternSchema = z
+  .string()
+  .trim()
+  .max(80)
+  .nullable()
+  .superRefine((value, ctx) => {
+    if (!value) {
+      return
+    }
+
+    const error = validateCardIdPattern(value)
+    if (error) {
+      ctx.addIssue({
+        code: "custom",
+        message: error,
+      })
+    }
+  })
+
 export const boardCreateSchema = z.object({
   title: z.string().trim().min(1).max(80),
   description: z.string().trim().max(240).optional(),
@@ -8,6 +29,7 @@ export const boardCreateSchema = z.object({
 export const boardPatchSchema = z.object({
   title: z.string().trim().min(1).max(80).optional(),
   description: z.string().trim().max(240).optional().nullable(),
+  cardIdPattern: cardIdPatternSchema.optional(),
 })
 
 export const boardListCreateSchema = z.object({

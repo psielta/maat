@@ -33,6 +33,10 @@ import {
   X,
 } from "lucide-react"
 
+import {
+  CARD_ID_PATTERN_TOKENS,
+  previewCardDisplayId,
+} from "@/lib/card-id-pattern"
 import { lexicalToPlainText } from "@/lib/lexical-text"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -68,6 +72,7 @@ import { UserAccountNav } from "@/components/user-account-nav"
 
 export type BoardCardModel = {
   id: string
+  displayId: string | null
   title: string
   description: string | null
   order: number
@@ -96,6 +101,7 @@ export type BoardModel = {
   id: string
   title: string
   description: string | null
+  cardIdPattern: string | null
   authorId: string
   members: BoardMemberModel[]
   lists: BoardListModel[]
@@ -162,6 +168,14 @@ function buildOrderPayload(lists: BoardListModel[]) {
   }
 }
 
+function CardDisplayId({ displayId }: { displayId: string }) {
+  return (
+    <p className="mb-1.5 font-mono text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+      {displayId}
+    </p>
+  )
+}
+
 function CardSurface({
   card,
   className,
@@ -176,6 +190,7 @@ function CardSurface({
         className
       )}
     >
+      {card.displayId && <CardDisplayId displayId={card.displayId} />}
       <p className="break-words text-sm font-medium leading-snug">
         {card.title}
       </p>
@@ -227,6 +242,7 @@ function SortableCard({
       {...(canEdit ? attributes : {})}
       {...(canEdit ? listeners : {})}
     >
+      {card.displayId && <CardDisplayId displayId={card.displayId} />}
       <p className="break-words text-sm font-medium leading-snug">
         {card.title}
       </p>
@@ -630,6 +646,9 @@ export function BoardView({
   const router = useRouter()
   const [title, setTitle] = React.useState(board.title)
   const [description, setDescription] = React.useState(board.description ?? "")
+  const [cardIdPattern, setCardIdPattern] = React.useState(
+    board.cardIdPattern ?? ""
+  )
   const [isEditingTitle, setIsEditingTitle] = React.useState(false)
   const [isSavingBoard, setIsSavingBoard] = React.useState(false)
   const [lists, setLists] = React.useState(() => normalizeLists(board.lists))
@@ -682,9 +701,16 @@ export function BoardView({
     return lists.find((list) => list.id === selectedCard.listId) ?? null
   }, [selectedCard, lists])
 
+  const cardIdPatternPreview = React.useMemo(() => {
+    const trimmed = cardIdPattern.trim()
+    if (!trimmed) return null
+    return previewCardDisplayId(trimmed, 1)
+  }, [cardIdPattern])
+
   React.useEffect(() => {
     setTitle(board.title)
     setDescription(board.description ?? "")
+    setCardIdPattern(board.cardIdPattern ?? "")
     setLists(normalizeLists(board.lists))
     setMembers(board.members)
   }, [board])
@@ -732,9 +758,12 @@ export function BoardView({
       return
     }
 
+    const nextCardIdPattern = cardIdPattern.trim() || null
+
     if (
       nextTitle === board.title &&
-      (description.trim() || null) === (board.description || null)
+      (description.trim() || null) === (board.description || null) &&
+      nextCardIdPattern === (board.cardIdPattern || null)
     ) {
       return
     }
@@ -749,6 +778,7 @@ export function BoardView({
       body: JSON.stringify({
         title: nextTitle,
         description: description.trim() || null,
+        cardIdPattern: nextCardIdPattern,
       }),
     })
 
@@ -1554,7 +1584,7 @@ export function BoardView({
           <DialogHeader>
             <DialogTitle>Board details</DialogTitle>
             <DialogDescription>
-              Update the board name and description.
+              Update the board name, description and card ID pattern.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3">
@@ -1571,6 +1601,39 @@ export function BoardView({
               className="min-h-[120px]"
               disabled={!access.canEdit}
             />
+            <div className="space-y-2 rounded-lg border border-dashed p-3">
+              <div>
+                <p className="text-sm font-medium">Card ID pattern</p>
+                <p className="text-xs text-muted-foreground">
+                  New cards receive an auto-generated ID from this pattern.
+                  Leave empty to disable.
+                </p>
+              </div>
+              <Input
+                value={cardIdPattern}
+                onChange={(event) => setCardIdPattern(event.target.value)}
+                placeholder="BP{Number:3}{Date}"
+                disabled={!access.canEdit}
+                className="font-mono text-sm"
+              />
+              <div className="space-y-1 text-xs text-muted-foreground">
+                {CARD_ID_PATTERN_TOKENS.map((item) => (
+                  <p key={item.token}>
+                    <span className="font-mono text-foreground">{item.token}</span>
+                    {" — "}
+                    {item.description}
+                  </p>
+                ))}
+              </div>
+              {cardIdPatternPreview && (
+                <p className="text-xs text-muted-foreground">
+                  Preview:{" "}
+                  <span className="font-mono font-medium text-foreground">
+                    {cardIdPatternPreview}
+                  </span>
+                </p>
+              )}
+            </div>
           </div>
           {access.canEdit && (
             <DialogFooter>
@@ -1600,6 +1663,11 @@ export function BoardView({
           {selectedCard && (
             <>
               <div className="flex shrink-0 items-center gap-2 border-b px-4 py-2.5 pr-12">
+                {selectedCard.displayId && (
+                  <span className="font-mono text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {selectedCard.displayId}
+                  </span>
+                )}
                 <span className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
                   <Icons.boards className="h-3.5 w-3.5" />
                   {selectedCardList?.title ?? "Card"}

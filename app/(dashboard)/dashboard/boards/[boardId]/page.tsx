@@ -34,6 +34,7 @@ export default async function BoardPage({ params }: BoardPageProps) {
       id: true,
       title: true,
       description: true,
+      cardIdPattern: true,
       authorId: true,
       members: {
         select: {
@@ -65,6 +66,7 @@ export default async function BoardPage({ params }: BoardPageProps) {
           cards: {
             select: {
               id: true,
+              displayId: true,
               title: true,
               description: true,
               order: true,

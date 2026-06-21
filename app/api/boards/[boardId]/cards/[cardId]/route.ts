@@ -63,6 +63,7 @@ export async function PATCH(req: Request, context: RouteContext) {
       },
       select: {
         id: true,
+        displayId: true,
         title: true,
         description: true,
         order: true,

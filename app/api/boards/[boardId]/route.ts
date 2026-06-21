@@ -52,11 +52,13 @@ export async function PATCH(req: Request, context: RouteContext) {
       data: {
         title: body.title,
         description: body.description,
+        cardIdPattern: body.cardIdPattern,
       },
       select: {
         id: true,
         title: true,
         description: true,
+        cardIdPattern: true,
       },
     })
     await recordBoardEvent({

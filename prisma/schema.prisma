@@ -73,15 +73,17 @@ model VerificationToken {
 }
 
 model Board {
-  id          String      @id @default(cuid())
-  title       String
-  description String?
-  createdAt   DateTime    @default(now()) @map(name: "created_at")
-  updatedAt   DateTime    @updatedAt @map(name: "updated_at")
-  authorId    String      @map(name: "author_id")
-  lists       BoardList[]
-  members     BoardMember[]
-  events      BoardEvent[]
+  id            String      @id @default(cuid())
+  title         String
+  description   String?
+  cardIdPattern String?     @map(name: "card_id_pattern")
+  createdAt     DateTime    @default(now()) @map(name: "created_at")
+  updatedAt     DateTime    @updatedAt @map(name: "updated_at")
+  authorId      String      @map(name: "author_id")
+  lists         BoardList[]
+  members       BoardMember[]
+  events        BoardEvent[]
+  cardIdSequences BoardCardIdSequence[]
 
   author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
@@ -128,6 +130,7 @@ model BoardList {
 
 model BoardCard {
   id          String    @id @default(cuid())
+  displayId   String?   @map(name: "display_id")
   title       String
   description String?   @db.Text
   order       Int       @default(0) @map(name: "sort_order")
@@ -139,7 +142,22 @@ model BoardCard {
   comments BoardCardComment[]
 
   @@index([listId])
+  @@index([displayId])
   @@map(name: "board_cards")
+}
+
+model BoardCardIdSequence {
+  id         String   @id @default(cuid())
+  dateKey    String   @default("") @map(name: "date_key")
+  lastNumber Int      @default(0) @map(name: "last_number")
+  createdAt  DateTime @default(now()) @map(name: "created_at")
+  updatedAt  DateTime @updatedAt @map(name: "updated_at")
+  boardId    String   @map(name: "board_id")
+
+  board Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  @@unique([boardId, dateKey])
+  @@map(name: "board_card_id_sequences")
 }
 
 model BoardCardComment {

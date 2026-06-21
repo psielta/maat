@@ -2,6 +2,7 @@ import * as z from "zod"
 
 import { getCurrentUserId, userCanEditBoard } from "@/lib/board-access"
 import { recordBoardEvent } from "@/lib/board-events"
+import { generateCardDisplayId } from "@/lib/card-id-pattern"
 import { db } from "@/lib/db"
 import { boardCardCreateSchema } from "@/lib/validations/board"
 
@@ -48,32 +49,53 @@ export async function POST(req: Request, context: RouteContext) {
       return new Response(null, { status: 404 })
     }
 
-    const lastCard = await db.boardCard.findFirst({
+    const board = await db.board.findFirst({
       where: {
-        listId: body.listId,
-      },
-      orderBy: {
-        order: "desc",
+        id: params.boardId,
       },
       select: {
-        order: true,
+        cardIdPattern: true,
       },
     })
 
-    const card = await db.boardCard.create({
-      data: {
-        title: body.title,
-        description: body.description,
-        order: (lastCard?.order ?? -1) + 1,
-        listId: body.listId,
-      },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        order: true,
-        listId: true,
-      },
+    if (!board) {
+      return new Response(null, { status: 404 })
+    }
+
+    const card = await db.$transaction(async (tx) => {
+      const lastCard = await tx.boardCard.findFirst({
+        where: {
+          listId: body.listId,
+        },
+        orderBy: {
+          order: "desc",
+        },
+        select: {
+          order: true,
+        },
+      })
+
+      const displayId = board.cardIdPattern
+        ? await generateCardDisplayId(params.boardId, board.cardIdPattern, tx)
+        : null
+
+      return tx.boardCard.create({
+        data: {
+          title: body.title,
+          description: body.description,
+          displayId,
+          order: (lastCard?.order ?? -1) + 1,
+          listId: body.listId,
+        },
+        select: {
+          id: true,
+          displayId: true,
+          title: true,
+          description: true,
+          order: true,
+          listId: true,
+        },
+      })
     })
     await recordBoardEvent({
       boardId: params.boardId,

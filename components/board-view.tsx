@@ -69,9 +69,8 @@ import { CardAttachments } from "@/components/card-attachments"
 import { CardComments } from "@/components/card-comments"
 import { getMentionableUsers } from "@/lib/board-mentionable-users"
 import { Icons } from "@/components/icons"
-import { NotificationBell } from "@/components/notification-bell"
+import { DashboardHeaderActions } from "@/components/dashboard-header-actions"
 import { RichTextEditor } from "@/components/rich-text-editor"
-import { UserAccountNav } from "@/components/user-account-nav"
 import { useBoardMentionAlerts } from "@/hooks/use-board-mention-alerts"
 import {
   InlineImageLightboxHost,
@@ -1448,9 +1447,7 @@ export function BoardView({
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
-            <NotificationBell />
-            <span className="hidden h-5 w-px bg-border sm:block" />
-            <UserAccountNav user={user} />
+            <DashboardHeaderActions user={user} variant="board" />
           </div>
         </header>
 

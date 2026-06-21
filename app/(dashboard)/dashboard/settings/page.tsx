@@ -6,9 +6,8 @@ import { getCurrentUser } from "@/lib/session"
 import { siteConfig } from "@/config/site"
 import { DashboardHeader } from "@/components/header"
 import { Icons } from "@/components/icons"
-import { NotificationBell } from "@/components/notification-bell"
+import { DashboardHeaderActions } from "@/components/dashboard-header-actions"
 import { DashboardShell } from "@/components/shell"
-import { UserAccountNav } from "@/components/user-account-nav"
 import { UserNameForm } from "@/components/user-name-form"
 
 export const metadata = {
@@ -34,8 +33,7 @@ export default async function SettingsPage() {
           <span className="text-lg">{siteConfig.name}</span>
         </Link>
         <div className="flex items-center gap-1.5">
-          <NotificationBell />
-          <UserAccountNav
+          <DashboardHeaderActions
             user={{ name: user.name, image: user.image, email: user.email }}
           />
         </div>

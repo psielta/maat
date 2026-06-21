@@ -8,8 +8,7 @@ import { siteConfig } from "@/config/site"
 import { BoardCreateButton } from "@/components/board-create-button"
 import { EmptyPlaceholder } from "@/components/empty-placeholder"
 import { Icons } from "@/components/icons"
-import { NotificationBell } from "@/components/notification-bell"
-import { UserAccountNav } from "@/components/user-account-nav"
+import { DashboardHeaderActions } from "@/components/dashboard-header-actions"
 
 export const metadata = {
   title: "Dashboard",
@@ -52,8 +51,7 @@ export default async function DashboardPage() {
           <span className="text-lg">{siteConfig.name}</span>
         </Link>
         <div className="flex items-center gap-1.5">
-          <NotificationBell />
-          <UserAccountNav
+          <DashboardHeaderActions
             user={{ name: user.name, image: user.image, email: user.email }}
           />
         </div>

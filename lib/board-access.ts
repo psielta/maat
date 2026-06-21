@@ -1,7 +1,5 @@
-import { getServerSession } from "next-auth"
-
-import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { getCurrentUser } from "@/lib/session"
 
 export type BoardAccess = {
   role: "OWNER" | "EDITOR" | "VIEWER"
@@ -11,8 +9,8 @@ export type BoardAccess = {
 }
 
 export async function getCurrentUserId() {
-  const session = await getServerSession(authOptions)
-  return session?.user?.id ?? null
+  const user = await getCurrentUser()
+  return user?.id ?? null
 }
 
 export async function getBoardAccess(

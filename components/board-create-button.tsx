@@ -37,7 +37,10 @@ export function BoardCreateButton({
     if (!response?.ok) {
       return toast({
         title: "Something went wrong.",
-        description: "Your board was not created. Please try again.",
+        description:
+          response.status === 403
+            ? "Your session is no longer valid. Sign in again and try once more."
+            : "Your board was not created. Please try again.",
         variant: "destructive",
       })
     }

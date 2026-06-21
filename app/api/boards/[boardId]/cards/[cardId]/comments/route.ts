@@ -112,7 +112,7 @@ export async function GET(req: Request, context: RouteContext) {
     const comments = await db.boardCardComment.findMany({
       where: { cardId: params.cardId },
       select: commentSelect,
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: "desc" },
     })
 
     return Response.json(comments.map(serializeComment))

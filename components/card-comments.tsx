@@ -171,7 +171,7 @@ export function CardComments({
     }
 
     const comment: CommentModel = await response.json()
-    setComments((current) => [...current, comment])
+    setComments((current) => [comment, ...current])
     setDraft("")
     setPendingAttachments([])
     setComposerKey((value) => value + 1)

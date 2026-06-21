@@ -2,33 +2,16 @@ import fs from "node:fs"
 import path from "node:path"
 import matter from "gray-matter"
 
-type ContentKind = "pages"
-
 type Frontmatter = {
   title?: string
   description?: string
-  date?: string | Date
-  published?: boolean
-  featured?: boolean
-  image?: string
-  authors?: string[]
-  avatar?: string
-  twitter?: string
 }
 
 export type ContentDoc = {
-  _id: string
   slug: string
   slugAsParams: string
   title: string
   description?: string
-  date: string
-  published: boolean
-  featured?: boolean
-  image: string
-  authors: string[]
-  avatar: string
-  twitter: string
   body: {
     raw: string
     code: string
@@ -58,8 +41,8 @@ function getMdxFiles(dir: string): string[] {
     })
 }
 
-function normalizeRouteParts(kind: ContentKind, filePath: string) {
-  const kindRoot = path.join(contentRoot, kind)
+function normalizeRouteParts(filePath: string) {
+  const kindRoot = path.join(contentRoot, "pages")
   const relativePath = path.relative(kindRoot, filePath)
   const withoutExtension = relativePath.replace(/\.(md|mdx)$/i, "")
   const parts = withoutExtension.split(path.sep).filter(Boolean)
@@ -71,48 +54,19 @@ function normalizeRouteParts(kind: ContentKind, filePath: string) {
   return parts
 }
 
-function createSlug(kind: ContentKind, slugAsParams: string) {
-  if (kind === "pages") {
-    return `/${slugAsParams}`
-  }
-
-  return `/${kind}${slugAsParams ? `/${slugAsParams}` : ""}`
-}
-
-function normalizeDate(value: Frontmatter["date"]) {
-  if (!value) {
-    return undefined
-  }
-
-  if (value instanceof Date) {
-    return value.toISOString()
-  }
-
-  return value
-}
-
-function readContent(kind: ContentKind): ContentDoc[] {
-  return getMdxFiles(path.join(contentRoot, kind)).map((filePath) => {
+function readContent(): ContentDoc[] {
+  return getMdxFiles(path.join(contentRoot, "pages")).map((filePath) => {
     const source = fs.readFileSync(filePath, "utf8")
     const { content, data } = matter(source)
     const frontmatter = data as Frontmatter
-    const routeParts = normalizeRouteParts(kind, filePath)
+    const routeParts = normalizeRouteParts(filePath)
     const slugAsParams = routeParts.join("/")
-    const slug = createSlug(kind, slugAsParams)
 
     return {
-      _id: `${kind}/${slugAsParams || "index"}`,
-      slug,
+      slug: `/${slugAsParams}`,
       slugAsParams,
       title: frontmatter.title ?? "",
       description: frontmatter.description,
-      date: normalizeDate(frontmatter.date) ?? "",
-      published: frontmatter.published ?? true,
-      featured: frontmatter.featured ?? false,
-      image: frontmatter.image ?? "",
-      authors: frontmatter.authors ?? [],
-      avatar: frontmatter.avatar ?? "",
-      twitter: frontmatter.twitter ?? "",
       body: {
         raw: content,
         code: content,
@@ -125,4 +79,4 @@ export function getRouteSegments(doc: Pick<ContentDoc, "slugAsParams">) {
   return doc.slugAsParams ? doc.slugAsParams.split("/") : []
 }
 
-export const allPages = readContent("pages")
+export const allPages = readContent()

@@ -2,7 +2,7 @@
 
 ## Contexto
 
-Maat é um app Next.js 16 para gerenciamento pessoal de tarefas de desenvolvedores. O objetivo é servir como projeto de portfólio no GitHub, com um produto real: Kanban colaborativo, Diário de Trabalho, permissões por usuário e realtime.
+Maat é um app Next.js 16 para gerenciamento pessoal de tarefas de desenvolvedores. O objetivo é servir como projeto de portfólio no GitHub, com um produto real: Kanban colaborativo, permissões por usuário e realtime.
 
 ## Como Se Orientar
 
@@ -12,11 +12,8 @@ Comece por estes arquivos:
 - `AGENT.md`: regras para agentes.
 - `prisma/schema.prisma`: modelo de dados.
 - `components/board-view.tsx`: principal experiência do produto.
-- `components/work-diary-entry-view.tsx`: editor do diário e compartilhamento por nota.
 - `app/api/boards/**`: contratos de mutação e realtime.
-- `app/api/diary/**`: contratos do diário de trabalho.
 - `lib/board-access.ts`: autorização.
-- `lib/diary-access.ts`: autorização do diário.
 - `lib/board-events.ts`: eventos persistidos e publicados.
 
 ## Decisões Importantes

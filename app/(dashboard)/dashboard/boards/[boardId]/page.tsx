@@ -86,7 +86,28 @@ export default async function BoardPage({ params }: BoardPageProps) {
     notFound()
   }
 
+  const boards = await db.board.findMany({
+    where: {
+      OR: [
+        { authorId: user.id },
+        { members: { some: { userId: user.id } } },
+      ],
+    },
+    select: {
+      id: true,
+      title: true,
+    },
+    orderBy: {
+      updatedAt: "desc",
+    },
+  })
+
   return (
-    <BoardView board={board} access={access} />
+    <BoardView
+      board={board}
+      access={access}
+      user={{ name: user.name, email: user.email, image: user.image }}
+      boards={boards}
+    />
   )
 }

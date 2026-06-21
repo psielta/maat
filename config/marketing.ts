@@ -8,7 +8,7 @@ export const marketingConfig: MarketingConfig = {
     },
     {
       title: "Workspace",
-      href: "/dashboard/boards",
+      href: "/dashboard",
     },
   ],
 }

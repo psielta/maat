@@ -1,7 +1,6 @@
 import {
   AlertTriangle,
   ArrowRight,
-  BookOpen,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -40,7 +39,6 @@ export const Icons = {
   media: Image,
   settings: Settings,
   boards: Kanban,
-  diary: BookOpen,
   ellipsis: MoreVertical,
   add: Plus,
   warning: AlertTriangle,

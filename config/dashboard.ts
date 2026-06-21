@@ -5,13 +5,8 @@ export const dashboardConfig: DashboardConfig = {
   sidebarNav: [
     {
       title: "Boards",
-      href: "/dashboard/boards",
+      href: "/dashboard",
       icon: "boards",
-    },
-    {
-      title: "Work Diary",
-      href: "/dashboard/diary",
-      icon: "diary",
     },
     {
       title: "Settings",

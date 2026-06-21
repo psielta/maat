@@ -56,8 +56,6 @@ model User {
   boards   Board[]
   boardMemberships BoardMember[]
   boardEvents      BoardEvent[]
-  workDiaryEntries WorkDiaryEntry[] @relation("WorkDiaryEntryAuthor")
-  workDiaryShares  WorkDiaryEntryShare[] @relation("WorkDiaryEntryShareUser")
 
   @@map(name: "users")
 }
@@ -90,11 +88,6 @@ model Board {
 
 enum BoardMemberRole {
   OWNER
-  EDITOR
-  VIEWER
-}
-
-enum WorkDiaryShareRole {
   EDITOR
   VIEWER
 }
@@ -158,35 +151,4 @@ model BoardEvent {
   @@index([boardId, id])
   @@index([actorId])
   @@map(name: "board_events")
-}
-
-model WorkDiaryEntry {
-  id        String   @id @default(cuid())
-  title     String
-  content   String?  @db.Text
-  createdAt DateTime @default(now()) @map(name: "created_at")
-  updatedAt DateTime @updatedAt @map(name: "updated_at")
-  authorId  String   @map(name: "author_id")
-
-  author User @relation("WorkDiaryEntryAuthor", fields: [authorId], references: [id], onDelete: Cascade)
-  shares WorkDiaryEntryShare[]
-
-  @@index([authorId, updatedAt])
-  @@map(name: "work_diary_entries")
-}
-
-model WorkDiaryEntryShare {
-  id        String             @id @default(cuid())
-  role      WorkDiaryShareRole @default(VIEWER)
-  createdAt DateTime           @default(now()) @map(name: "created_at")
-  updatedAt DateTime           @updatedAt @map(name: "updated_at")
-  entryId   String             @map(name: "entry_id")
-  userId    String             @map(name: "user_id")
-
-  entry WorkDiaryEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
-  user  User           @relation("WorkDiaryEntryShareUser", fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([entryId, userId])
-  @@index([userId])
-  @@map(name: "work_diary_entry_shares")
 }

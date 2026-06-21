@@ -31,9 +31,9 @@ const features = [
       "Invite another user as an editor or viewer and collaborate without duplicating context.",
   },
   {
-    title: "Work diary",
+    title: "Rich cards & comments",
     description:
-      "Keep private notes about decisions and progress, then share a specific note when context matters.",
+      "Write task details in a rich text editor and discuss work with teammates through card comments.",
   },
   {
     title: "Realtime updates",
@@ -66,7 +66,7 @@ export default function IndexPage() {
                 Start with email
               </Link>
               <Link
-                href="/dashboard/boards"
+                href="/dashboard"
                 className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
               >
                 Open workspace

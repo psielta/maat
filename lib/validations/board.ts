@@ -18,15 +18,21 @@ export const boardListPatchSchema = z.object({
   title: z.string().trim().min(1).max(80),
 })
 
+// `description` holds serialized rich-text (Lexical) editor state, so the
+// limit is generous compared to a plain-text field.
 export const boardCardCreateSchema = z.object({
   listId: z.string().min(1),
   title: z.string().trim().min(1).max(140),
-  description: z.string().trim().max(1000).optional(),
+  description: z.string().trim().max(50000).optional(),
 })
 
 export const boardCardPatchSchema = z.object({
   title: z.string().trim().min(1).max(140).optional(),
-  description: z.string().trim().max(1000).optional().nullable(),
+  description: z.string().trim().max(50000).optional().nullable(),
+})
+
+export const boardCardCommentCreateSchema = z.object({
+  content: z.string().trim().min(1).max(5000),
 })
 
 export const boardReorderSchema = z.object({

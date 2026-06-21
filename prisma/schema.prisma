@@ -56,6 +56,9 @@ model User {
   boards   Board[]
   boardMemberships BoardMember[]
   boardEvents      BoardEvent[]
+  cardComments     BoardCardComment[]
+  notifications      Notification[] @relation("NotificationUser")
+  actedNotifications Notification[] @relation("NotificationActor")
 
   @@map(name: "users")
 }
@@ -132,10 +135,43 @@ model BoardCard {
   updatedAt   DateTime  @updatedAt @map(name: "updated_at")
   listId      String    @map(name: "list_id")
 
-  list BoardList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  list     BoardList          @relation(fields: [listId], references: [id], onDelete: Cascade)
+  comments BoardCardComment[]
 
   @@index([listId])
   @@map(name: "board_cards")
+}
+
+model BoardCardComment {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @map(name: "created_at")
+  updatedAt DateTime @updatedAt @map(name: "updated_at")
+  cardId    String   @map(name: "card_id")
+  authorId  String   @map(name: "author_id")
+
+  card   BoardCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  author User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([cardId, createdAt])
+  @@index([authorId])
+  @@map(name: "board_card_comments")
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  type      String
+  data      Json
+  readAt    DateTime? @map(name: "read_at")
+  createdAt DateTime  @default(now()) @map(name: "created_at")
+  userId    String    @map(name: "user_id")
+  actorId   String?   @map(name: "actor_id")
+
+  user  User  @relation("NotificationUser", fields: [userId], references: [id], onDelete: Cascade)
+  actor User? @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@map(name: "notifications")
 }
 
 model BoardEvent {

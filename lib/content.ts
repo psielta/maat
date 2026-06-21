@@ -2,7 +2,7 @@ import fs from "node:fs"
 import path from "node:path"
 import matter from "gray-matter"
 
-type ContentKind = "authors" | "blog" | "docs" | "guides" | "pages"
+type ContentKind = "pages"
 
 type Frontmatter = {
   title?: string
@@ -35,10 +35,6 @@ export type ContentDoc = {
   }
 }
 
-export type Doc = ContentDoc
-export type Guide = ContentDoc
-export type Post = ContentDoc
-export type Author = ContentDoc
 export type Page = ContentDoc
 
 const contentRoot = path.join(process.cwd(), "content")
@@ -129,8 +125,4 @@ export function getRouteSegments(doc: Pick<ContentDoc, "slugAsParams">) {
   return doc.slugAsParams ? doc.slugAsParams.split("/") : []
 }
 
-export const allAuthors = readContent("authors")
-export const allDocs = readContent("docs")
-export const allGuides = readContent("guides")
 export const allPages = readContent("pages")
-export const allPosts = readContent("blog")

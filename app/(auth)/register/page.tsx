@@ -8,7 +8,7 @@ import { UserAuthForm } from "@/components/user-auth-form"
 
 export const metadata = {
   title: "Create an account",
-  description: "Create an account to get started.",
+  description: "Create a Maat account.",
 }
 
 export default function RegisterPage() {
@@ -29,10 +29,10 @@ export default function RegisterPage() {
           <div className="flex flex-col space-y-2 text-center">
             <Icons.logo className="mx-auto h-6 w-6" />
             <h1 className="text-2xl font-semibold tracking-tight">
-              Create an account
+              Create your Maat account
             </h1>
             <p className="text-sm text-muted-foreground">
-              Enter your email below to create your account
+              Enter your email to start organizing your developer work.
             </p>
           </div>
           <Suspense fallback={null}>

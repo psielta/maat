@@ -1,27 +1,33 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: taxonomy-postgres
+    container_name: maat-postgres
     environment:
-      POSTGRES_DB: taxonomy
-      POSTGRES_USER: taxonomy
-      POSTGRES_PASSWORD: taxonomy
+      POSTGRES_DB: maat
+      POSTGRES_USER: maat
+      POSTGRES_PASSWORD: maat
     ports:
       - "14532:5432"
     volumes:
-      - taxonomy_postgres_data:/var/lib/postgresql/data
+      - maat_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U taxonomy -d taxonomy"]
+      test: ["CMD-SHELL", "pg_isready -U maat -d maat"]
       interval: 5s
       timeout: 5s
       retries: 10
 
   mailhog:
     image: mailhog/mailhog:v1.0.1
-    container_name: taxonomy-mailhog
+    container_name: maat-mailhog
     ports:
       - "14525:1025"
       - "14580:8025"
 
+  redis:
+    image: redis:7-alpine
+    container_name: maat-redis
+    ports:
+      - "14679:6379"
+
 volumes:
-  taxonomy_postgres_data:
+  maat_postgres_data:

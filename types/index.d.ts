@@ -1,6 +1,3 @@
-import { User } from "@prisma/client"
-import type { Icon } from "lucide-react"
-
 import { Icons } from "@/components/icons"
 
 export type NavItem = {
@@ -33,7 +30,6 @@ export type SiteConfig = {
   url: string
   ogImage: string
   links: {
-    twitter: string
     github: string
   }
 }
@@ -52,14 +48,3 @@ export type DashboardConfig = {
   sidebarNav: SidebarNavItem[]
 }
 
-export type SubscriptionPlan = {
-  name: string
-  description: string
-  stripePriceId: string
-}
-
-export type UserSubscriptionPlan = SubscriptionPlan &
-  Pick<User, "stripeCustomerId" | "stripeSubscriptionId"> & {
-    stripeCurrentPeriodEnd: number
-    isPro: boolean
-  }

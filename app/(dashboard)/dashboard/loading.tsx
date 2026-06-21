@@ -1,20 +1,17 @@
 import { DashboardHeader } from "@/components/header"
-import { PostCreateButton } from "@/components/post-create-button"
-import { PostItem } from "@/components/post-item"
 import { DashboardShell } from "@/components/shell"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function DashboardLoading() {
   return (
     <DashboardShell>
-      <DashboardHeader heading="Posts" text="Create and manage posts.">
-        <PostCreateButton />
+      <DashboardHeader heading="Boards" text="Plan work with Kanban boards.">
+        <Skeleton className="h-10 w-[104px]" />
       </DashboardHeader>
-      <div className="divide-border-200 divide-y rounded-md border">
-        <PostItem.Skeleton />
-        <PostItem.Skeleton />
-        <PostItem.Skeleton />
-        <PostItem.Skeleton />
-        <PostItem.Skeleton />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <Skeleton className="h-[170px] rounded-md" />
+        <Skeleton className="h-[170px] rounded-md" />
+        <Skeleton className="h-[170px] rounded-md" />
       </div>
     </DashboardShell>
   )

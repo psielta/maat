@@ -24,16 +24,17 @@ export const metadata: Metadata = {
     "Next.js",
     "React",
     "Tailwind CSS",
-    "Server Components",
-    "Radix UI",
+    "Kanban",
+    "Task management",
+    "Realtime collaboration",
   ],
   authors: [
     {
-      name: "shadcn",
-      url: "https://shadcn.com",
+      name: "Maat",
+      url: siteConfig.url,
     },
   ],
-  creator: "shadcn",
+  creator: "Maat",
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -47,7 +48,6 @@ export const metadata: Metadata = {
     title: siteConfig.name,
     description: siteConfig.description,
     images: [`${siteConfig.url}/og.jpg`],
-    creator: "@shadcn",
   },
   icons: {
     icon: "/favicon.ico",

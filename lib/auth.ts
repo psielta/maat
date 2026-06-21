@@ -1,7 +1,6 @@
 import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import { NextAuthOptions } from "next-auth"
 import EmailProvider from "next-auth/providers/email"
-import GitHubProvider from "next-auth/providers/github"
 import { createTransport } from "nodemailer"
 import { Resend } from "resend"
 
@@ -9,7 +8,7 @@ import { env } from "@/env.mjs"
 import { siteConfig } from "@/config/site"
 import { db } from "@/lib/db"
 
-const resend = new Resend(env.RESEND_API_KEY)
+const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null
 
 function escapeHtml(value: string) {
   return value
@@ -178,6 +177,10 @@ async function sendProductionEmail({
   url: string
   from: string
 }) {
+  if (!resend) {
+    throw new Error("RESEND_API_KEY is required in production.")
+  }
+
   const { error } = await resend.emails.send({
     to: [identifier],
     from,
@@ -206,10 +209,6 @@ export const authOptions: NextAuthOptions = {
     signIn: "/login",
   },
   providers: [
-    GitHubProvider({
-      clientId: env.GITHUB_CLIENT_ID,
-      clientSecret: env.GITHUB_CLIENT_SECRET,
-    }),
     EmailProvider({
       from: env.EMAIL_FROM,
       sendVerificationRequest: async ({ identifier, url, provider }) => {

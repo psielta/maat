@@ -186,7 +186,11 @@ export function CardComments({
             value=""
             editable
             onChange={setDraft}
-            placeholder="Write a comment… Use @ to mention someone."
+            placeholder={
+              mentionableUsers.length > 0
+                ? "Write a comment… Use @ to mention someone."
+                : "Write a comment… Share the board to mention members."
+            }
             className="bg-background"
             mentionableUsers={mentionableUsers}
           />

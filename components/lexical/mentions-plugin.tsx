@@ -88,20 +88,46 @@ function MentionMenuItem({
   )
 }
 
+function filterOptions(
+  options: MentionTypeaheadOption[],
+  queryString: string | null
+) {
+  const query = queryString?.trim().toLowerCase() ?? ""
+
+  if (!query) {
+    return options
+  }
+
+  return options.filter((option) => {
+    const label = getMentionDisplayName(option.user).toLowerCase()
+    const email = option.user.email?.toLowerCase() ?? ""
+    return label.includes(query) || email.includes(query)
+  })
+}
+
 export function MentionsPlugin({
   mentionableUsers,
 }: {
   mentionableUsers: MentionableUser[]
 }) {
   const [editor] = useLexicalComposerContext()
+  const [queryString, setQueryString] = React.useState<string | null>(null)
+
   const checkMatch = useBasicTypeaheadTriggerMatch("@", {
     minLength: 0,
     maxLength: 40,
+    punctuation:
+      "\\.,\\+\\*\\?\\$\\|#{}\\(\\)\\^\\-\\[\\]\\\\/!%'\"~=<>_:;",
   })
 
   const options = React.useMemo(
     () => mentionableUsers.map((user) => new MentionTypeaheadOption(user)),
     [mentionableUsers]
+  )
+
+  const filteredOptions = React.useMemo(
+    () => filterOptions(options, queryString),
+    [options, queryString]
   )
 
   const onSelectOption = React.useCallback(
@@ -130,23 +156,18 @@ export function MentionsPlugin({
     [editor]
   )
 
+  if (options.length === 0) {
+    return null
+  }
+
   return (
     <LexicalTypeaheadMenuPlugin<MentionTypeaheadOption>
-      onQueryChange={(queryString) => {
-        const query = queryString?.trim().toLowerCase() ?? ""
-        return options.filter((option) => {
-          if (!query) {
-            return true
-          }
-
-          const label = getMentionDisplayName(option.user).toLowerCase()
-          const email = option.user.email?.toLowerCase() ?? ""
-          return label.includes(query) || email.includes(query)
-        })
-      }}
+      anchorClassName="typeahead-menu-anchor pointer-events-none fixed z-[200]"
+      onQueryChange={setQueryString}
+      onClose={() => setQueryString(null)}
       onSelectOption={onSelectOption}
       triggerFn={checkMatch}
-      options={options}
+      options={filteredOptions}
       menuRenderFn={(
         anchorElementRef,
         { selectedIndex, selectOptionAndCleanUp, setHighlightedIndex, options: menuOptions }
@@ -156,7 +177,7 @@ export function MentionsPlugin({
         }
 
         return createPortal(
-          <div className="z-50 max-h-56 min-w-[220px] overflow-y-auto rounded-md border bg-popover p-1 shadow-md">
+          <div className="pointer-events-auto z-[200] max-h-56 min-w-[220px] overflow-y-auto rounded-md border bg-popover p-1 shadow-md">
             {menuOptions.map((option, index) => (
               <MentionMenuItem
                 key={option.key}

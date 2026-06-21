@@ -350,7 +350,7 @@ export function RichTextEditor({
       <HistoryPlugin />
       <ListPlugin />
       <LinkPlugin />
-      {editable && mentionableUsers && mentionableUsers.length > 0 && (
+      {editable && mentionableUsers !== undefined && (
         <MentionsPlugin mentionableUsers={mentionableUsers} />
       )}
       {editable && (

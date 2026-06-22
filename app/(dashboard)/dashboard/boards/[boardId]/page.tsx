@@ -9,6 +9,8 @@ import { serializeCardDates } from "@/lib/card-dates"
 import { cardSelect } from "@/lib/card-select"
 import { customFieldSelect, customFieldValueSelect } from "@/lib/custom-field-select"
 import { serializeCustomFieldValueRow } from "@/lib/custom-field-serialize"
+import { cardLabelSelect } from "@/lib/label-select"
+import { serializeBoardLabel, serializeCardLabels } from "@/lib/label-serialize"
 
 interface BoardPageProps {
   params: Promise<{
@@ -46,6 +48,17 @@ export default async function BoardPage({ params }: BoardPageProps) {
           order: "asc",
         },
       },
+      labels: {
+        select: {
+          id: true,
+          name: true,
+          color: true,
+          order: true,
+        },
+        orderBy: {
+          order: "asc",
+        },
+      },
       members: {
         select: {
           id: true,
@@ -78,6 +91,9 @@ export default async function BoardPage({ params }: BoardPageProps) {
               ...cardSelect,
               customFieldValues: {
                 select: customFieldValueSelect,
+              },
+              labels: {
+                select: cardLabelSelect,
               },
             },
             orderBy: {
@@ -114,6 +130,7 @@ export default async function BoardPage({ params }: BoardPageProps) {
 
   const boardForView = {
     ...board,
+    labels: board.labels.map(serializeBoardLabel),
     customFields: board.customFields.map((field) => ({
       id: field.id,
       name: field.name,
@@ -133,6 +150,7 @@ export default async function BoardPage({ params }: BoardPageProps) {
         ...card,
         ...serializeCardDates(card),
         customFieldValues: card.customFieldValues.map(serializeCustomFieldValueRow),
+        labels: serializeCardLabels(card.labels),
       })),
     })),
   }

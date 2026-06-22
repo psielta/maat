@@ -86,6 +86,7 @@ model Board {
   events        BoardEvent[]
   cardIdSequences BoardCardIdSequence[]
   customFields  BoardCustomField[]
+  labels        BoardLabel[]
 
   author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
@@ -147,6 +148,7 @@ model BoardCard {
   comments          BoardCardComment[]
   attachments       BoardCardAttachment[]
   customFieldValues BoardCardCustomFieldValue[]
+  labels            BoardCardLabel[]
 
   @@index([listId])
   @@index([displayId])
@@ -297,6 +299,34 @@ model BoardCardCustomFieldValue {
   @@index([cardId])
   @@index([fieldId])
   @@map(name: "board_card_custom_field_values")
+}
+
+model BoardLabel {
+  id        String   @id @default(cuid())
+  name      String   @default("")
+  color     String
+  order     Int      @default(0) @map(name: "sort_order")
+  createdAt DateTime @default(now()) @map(name: "created_at")
+  updatedAt DateTime @updatedAt @map(name: "updated_at")
+  boardId   String   @map(name: "board_id")
+
+  board Board            @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  cards BoardCardLabel[]
+
+  @@index([boardId])
+  @@map(name: "board_labels")
+}
+
+model BoardCardLabel {
+  cardId  String @map(name: "card_id")
+  labelId String @map(name: "label_id")
+
+  card  BoardCard  @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  label BoardLabel @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@id([cardId, labelId])
+  @@index([labelId])
+  @@map(name: "board_card_labels")
 }
 
 model BoardEvent {

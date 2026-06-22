@@ -3,6 +3,7 @@ import * as z from "zod"
 import { validateCardIdPattern } from "@/lib/card-id-pattern"
 import { isValidDateOnly } from "@/lib/card-dates"
 import { isValidCustomFieldColor } from "@/lib/custom-field-colors"
+import { isValidLabelColor } from "@/lib/label-colors"
 
 export const MAX_CUSTOM_FIELDS_PER_BOARD = 50
 export const MAX_CUSTOM_FIELD_OPTIONS = 50
@@ -255,4 +256,37 @@ export const cardCustomFieldsPatchSchema = z.object({
       value: z.union([z.string(), z.number(), z.boolean(), z.null()]),
     })
   ),
+})
+
+export const MAX_LABELS_PER_BOARD = 50
+
+const labelColorSchema = z.string().trim().superRefine((value, ctx) => {
+  if (!isValidLabelColor(value)) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Color must be one of the supported presets.",
+    })
+  }
+})
+
+export const labelCreateSchema = z.object({
+  name: z.string().trim().max(80).optional(),
+  color: labelColorSchema,
+})
+
+export const labelPatchSchema = z
+  .object({
+    name: z.string().trim().max(80).optional(),
+    color: labelColorSchema.optional(),
+  })
+  .refine((data) => data.name !== undefined || data.color !== undefined, {
+    message: "At least one field must be provided.",
+  })
+
+export const labelReorderSchema = z.object({
+  labelIds: z.array(z.string().min(1)),
+})
+
+export const cardLabelsPatchSchema = z.object({
+  labelIds: z.array(z.string().min(1)),
 })

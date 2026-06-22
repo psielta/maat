@@ -31,6 +31,7 @@ import {
   Kanban,
   ListChecks,
   MessageSquare,
+  Tags,
   MoreHorizontal,
   Pencil,
   UserPlus,
@@ -72,11 +73,15 @@ import { BoardCustomFieldsManager } from "@/components/board-custom-fields-manag
 import { CardAttachments } from "@/components/card-attachments"
 import { CardComments } from "@/components/card-comments"
 import { BoardCalendarView } from "@/components/board-calendar-view"
+import { BoardLabelsManager } from "@/components/board-labels-manager"
 import { CardCustomFields } from "@/components/card-custom-fields"
+import { CardLabelStrips } from "@/components/card-label-strips"
+import { CardLabels } from "@/components/card-labels"
 import { CardDateBadge } from "@/components/card-date-badge"
 import { CardDates } from "@/components/card-dates"
 import { CustomFieldBadges } from "@/components/custom-field-badges"
 import type { CardDatesModel } from "@/lib/card-dates"
+import type { BoardLabelModel } from "@/lib/label-display"
 import type { CustomFieldDefinitionModel } from "@/lib/custom-field-display"
 import type { CustomFieldClientValue } from "@/lib/custom-field-values"
 import { getMentionableUsers } from "@/lib/board-mentionable-users"
@@ -104,6 +109,7 @@ export type BoardCardModel = {
   order: number
   listId: string
   customFieldValues: CustomFieldClientValue[]
+  labels: BoardLabelModel[]
 }
 
 export type BoardListModel = {
@@ -133,6 +139,7 @@ export type BoardModel = {
   members: BoardMemberModel[]
   lists: BoardListModel[]
   customFields: CustomFieldDefinitionModel[]
+  labels: BoardLabelModel[]
 }
 
 export type BoardAccessModel = {
@@ -154,6 +161,7 @@ function normalizeCard(card: BoardCardModel): BoardCardModel {
     dueAt: card.dueAt ?? null,
     dueComplete: card.dueComplete ?? false,
     customFieldValues: card.customFieldValues ?? [],
+    labels: card.labels ?? [],
   }
 }
 
@@ -230,10 +238,12 @@ function CardSurface({
   return (
     <div
       className={cn(
-        "rounded-lg border border-black/5 bg-card p-3 text-card-foreground shadow-sm dark:border-white/10",
+        "overflow-hidden rounded-lg border border-black/5 bg-card text-card-foreground shadow-sm dark:border-white/10",
         className
       )}
     >
+      <CardLabelStrips labels={card.labels} />
+      <div className="p-3 pt-2">
       {card.displayId && <CardDisplayId displayId={card.displayId} />}
       <p className="break-words text-sm font-medium leading-snug">
         {card.title}
@@ -248,6 +258,7 @@ function CardSurface({
           <AlignLeft className="h-3.5 w-3.5 shrink-0" />
         </div>
       )}
+      </div>
     </div>
   )
 }
@@ -287,7 +298,7 @@ function SortableCard({
       }}
       onClick={() => onOpen(card)}
       className={cn(
-        "group relative rounded-lg border border-black/5 bg-card p-3 text-card-foreground shadow-sm transition-shadow dark:border-white/10",
+        "group relative overflow-hidden rounded-lg border border-black/5 bg-card text-card-foreground shadow-sm transition-shadow dark:border-white/10",
         "hover:border-primary/40 hover:shadow-md",
         hasUnreadMention && "mention-alert-card",
         canEdit && "cursor-grab active:cursor-grabbing",
@@ -304,23 +315,26 @@ function SortableCard({
           <Bell className="h-3 w-3" />
         </span>
       )}
-      {card.displayId && <CardDisplayId displayId={card.displayId} />}
-      <p className="break-words text-sm font-medium leading-snug">
-        {card.title}
-      </p>
-      <CustomFieldBadges
-        fields={customFields}
-        values={card.customFieldValues}
-      />
-      <CardDateBadge dates={card} />
-      {card.description && (
-        <div className="mt-2 flex items-center gap-1.5 text-muted-foreground">
-          <AlignLeft className="h-3.5 w-3.5 shrink-0" />
-          <span className="line-clamp-1 text-xs leading-4">
-            {lexicalToPlainText(card.description)}
-          </span>
-        </div>
-      )}
+      <CardLabelStrips labels={card.labels} />
+      <div className="p-3 pt-2">
+        {card.displayId && <CardDisplayId displayId={card.displayId} />}
+        <p className="break-words text-sm font-medium leading-snug">
+          {card.title}
+        </p>
+        <CustomFieldBadges
+          fields={customFields}
+          values={card.customFieldValues}
+        />
+        <CardDateBadge dates={card} />
+        {card.description && (
+          <div className="mt-2 flex items-center gap-1.5 text-muted-foreground">
+            <AlignLeft className="h-3.5 w-3.5 shrink-0" />
+            <span className="line-clamp-1 text-xs leading-4">
+              {lexicalToPlainText(card.description)}
+            </span>
+          </div>
+        )}
+      </div>
     </article>
   )
 }
@@ -749,10 +763,12 @@ export function BoardView({
   const [isShareOpen, setIsShareOpen] = React.useState(false)
   const [isDetailsOpen, setIsDetailsOpen] = React.useState(false)
   const [isCustomFieldsOpen, setIsCustomFieldsOpen] = React.useState(false)
+  const [isLabelsOpen, setIsLabelsOpen] = React.useState(false)
   const [boardViewMode, setBoardViewMode] = React.useState<"board" | "calendar">(
     "board"
   )
   const [customFields, setCustomFields] = React.useState(board.customFields)
+  const [labels, setLabels] = React.useState(board.labels)
   const [isRealtimeConnected, setIsRealtimeConnected] = React.useState(false)
   const [cardDrafts, setCardDrafts] = React.useState<Record<string, string>>({})
   const [listDraft, setListDraft] = React.useState("")
@@ -809,6 +825,7 @@ export function BoardView({
     setLists(normalizeLists(board.lists))
     setMembers(board.members)
     setCustomFields(board.customFields)
+    setLabels(board.labels)
   }, [board])
 
   React.useEffect(() => {
@@ -879,6 +896,44 @@ export function BoardView({
     )
     setSelectedCard((current) =>
       current?.id === cardId ? { ...current, ...dates } : current
+    )
+  }
+
+  function updateCardLabels(cardId: string, nextLabels: BoardLabelModel[]) {
+    setLists((current) =>
+      current.map((list) => ({
+        ...list,
+        cards: list.cards.map((card) =>
+          card.id === cardId ? { ...card, labels: nextLabels } : card
+        ),
+      }))
+    )
+    setSelectedCard((current) =>
+      current?.id === cardId ? { ...current, labels: nextLabels } : current
+    )
+  }
+
+  function handleBoardLabelsChange(nextLabels: BoardLabelModel[]) {
+    const nextLabelIds = new Set(nextLabels.map((label) => label.id))
+    setLabels(nextLabels)
+    setLists((current) =>
+      current.map((list) => ({
+        ...list,
+        cards: list.cards.map((card) => ({
+          ...card,
+          labels: card.labels.filter((label) => nextLabelIds.has(label.id)),
+        })),
+      }))
+    )
+    setSelectedCard((current) =>
+      current
+        ? {
+            ...current,
+            labels: current.labels.filter((label) =>
+              nextLabelIds.has(label.id)
+            ),
+          }
+        : current
     )
   }
 
@@ -1250,6 +1305,7 @@ export function BoardView({
     const card = normalizeCard({
       ...(await response.json()),
       customFieldValues: [] as CustomFieldClientValue[],
+      labels: [],
     })
     setLists((current) =>
       normalizeLists(
@@ -1301,6 +1357,7 @@ export function BoardView({
       startDate: selectedCard.startDate,
       dueAt: selectedCard.dueAt,
       dueComplete: selectedCard.dueComplete,
+      labels: selectedCard.labels,
     })
     setLists((current) =>
       normalizeLists(
@@ -1567,6 +1624,12 @@ export function BoardView({
                     </DropdownMenuItem>
                   )}
                   {access.canManage && (
+                    <DropdownMenuItem onSelect={() => setIsLabelsOpen(true)}>
+                      <Tags className="mr-2 h-4 w-4" />
+                      Labels
+                    </DropdownMenuItem>
+                  )}
+                  {access.canManage && (
                     <DropdownMenuItem onSelect={() => setIsShareOpen(true)}>
                       <UserPlus className="mr-2 h-4 w-4" />
                       Manage members
@@ -1767,6 +1830,14 @@ export function BoardView({
         onFieldsChange={setCustomFields}
       />
 
+      <BoardLabelsManager
+        boardId={board.id}
+        labels={labels}
+        open={isLabelsOpen}
+        onOpenChange={setIsLabelsOpen}
+        onLabelsChange={handleBoardLabelsChange}
+      />
+
       {/* Board details dialog */}
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
         <DialogContent>
@@ -1945,6 +2016,23 @@ export function BoardView({
                     canEdit={access.canEdit}
                     onDatesChange={(dates) =>
                       updateCardDates(selectedCard.id, dates)
+                    }
+                  />
+
+                  <CardLabels
+                    boardId={board.id}
+                    cardId={selectedCard.id}
+                    boardLabels={labels}
+                    cardLabels={selectedCard.labels}
+                    canEdit={access.canEdit}
+                    canManage={access.canManage}
+                    onLabelsChange={(next) =>
+                      updateCardLabels(selectedCard.id, next)
+                    }
+                    onEditLabels={
+                      access.canManage
+                        ? () => setIsLabelsOpen(true)
+                        : undefined
                     }
                   />
 

@@ -332,7 +332,7 @@ function CardSurface({
   )
 }
 
-function SortableCard({
+const SortableCard = React.memo(function SortableCardImpl({
   card,
   customFields,
   boardLabels,
@@ -520,7 +520,7 @@ function SortableCard({
       </ContextMenuContent>
     </ContextMenu>
   )
-}
+})
 
 function CardComposer({
   value,
@@ -1110,10 +1110,17 @@ export function BoardView({
     }
   }, [selectedCard])
 
-  function openCard(card: BoardCardModel) {
-    setSelectedCard(normalizeCard(card))
-    void markCardMentionsRead(card.id)
-  }
+  const openCard = React.useCallback(
+    (card: BoardCardModel) => {
+      setSelectedCard(normalizeCard(card))
+      void markCardMentionsRead(card.id)
+    },
+    [markCardMentionsRead]
+  )
+
+  const openLabelsManager = React.useCallback(() => {
+    setIsLabelsOpen(true)
+  }, [])
 
   function updateCardCustomFieldValues(
     cardId: string,
@@ -1148,33 +1155,39 @@ export function BoardView({
     )
   }
 
-  function updateCardLabels(cardId: string, nextLabels: BoardLabelModel[]) {
-    setLists((current) =>
-      current.map((list) => ({
-        ...list,
-        cards: list.cards.map((card) =>
-          card.id === cardId ? { ...card, labels: nextLabels } : card
-        ),
-      }))
-    )
-    setSelectedCard((current) =>
-      current?.id === cardId ? { ...current, labels: nextLabels } : current
-    )
-  }
+  const updateCardLabels = React.useCallback(
+    (cardId: string, nextLabels: BoardLabelModel[]) => {
+      setLists((current) =>
+        current.map((list) => ({
+          ...list,
+          cards: list.cards.map((card) =>
+            card.id === cardId ? { ...card, labels: nextLabels } : card
+          ),
+        }))
+      )
+      setSelectedCard((current) =>
+        current?.id === cardId ? { ...current, labels: nextLabels } : current
+      )
+    },
+    []
+  )
 
-  function updateCardType(cardId: string, cardType: BoardCardTypeValue) {
-    setLists((current) =>
-      current.map((list) => ({
-        ...list,
-        cards: list.cards.map((card) =>
-          card.id === cardId ? { ...card, cardType } : card
-        ),
-      }))
-    )
-    setSelectedCard((current) =>
-      current?.id === cardId ? { ...current, cardType } : current
-    )
-  }
+  const updateCardType = React.useCallback(
+    (cardId: string, cardType: BoardCardTypeValue) => {
+      setLists((current) =>
+        current.map((list) => ({
+          ...list,
+          cards: list.cards.map((card) =>
+            card.id === cardId ? { ...card, cardType } : card
+          ),
+        }))
+      )
+      setSelectedCard((current) =>
+        current?.id === cardId ? { ...current, cardType } : current
+      )
+    },
+    []
+  )
 
   function updateCardModel(cardId: string, patch: Partial<BoardCardModel>) {
     setLists((current) =>
@@ -1698,6 +1711,17 @@ export function BoardView({
 
     if (!nextTitle) return
 
+    // Only send the description when it actually changed. A title-only save
+    // should not re-run inline-image promotion/cleanup nor risk clobbering the
+    // stored description.
+    const nextDescription = cardDescriptionDraft.trim() || null
+    const payload: { title: string; description?: string | null } = {
+      title: nextTitle,
+    }
+    if (nextDescription !== (selectedCard.description ?? null)) {
+      payload.description = nextDescription
+    }
+
     const response = await fetch(
       `/api/boards/${board.id}/cards/${selectedCard.id}`,
       {
@@ -1705,10 +1729,7 @@ export function BoardView({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          title: nextTitle,
-          description: cardDescriptionDraft.trim() || null,
-        }),
+        body: JSON.stringify(payload),
       }
     )
 
@@ -1742,101 +1763,104 @@ export function BoardView({
     return toast({ description: msg.toast.cardSaved })
   }
 
-  async function updateCardTypeFromMenu(
-    card: BoardCardModel,
-    cardType: BoardCardTypeValue
-  ) {
-    if (!access.canEdit || card.cardType === cardType) return
+  const updateCardTypeFromMenu = React.useCallback(
+    async (card: BoardCardModel, cardType: BoardCardTypeValue) => {
+      if (!access.canEdit || card.cardType === cardType) return
 
-    const previousType = card.cardType
-    updateCardType(card.id, cardType)
+      const previousType = card.cardType
+      updateCardType(card.id, cardType)
 
-    const response = await fetch(`/api/boards/${board.id}/cards/${card.id}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ cardType }),
-    })
-
-    if (!response.ok) {
-      updateCardType(card.id, previousType)
-      return toast({
-        title: msg.common.errorTitle,
-        description: msg.toast.cardTypeNotSaved,
-        variant: "destructive",
-      })
-    }
-
-    const updatedCard = await response.json()
-    updateCardType(card.id, updatedCard.cardType)
-  }
-
-  async function updateCardLabelsFromMenu(
-    card: BoardCardModel,
-    nextLabels: BoardLabelModel[]
-  ) {
-    if (!access.canEdit) return
-
-    const previousLabels = card.labels
-    updateCardLabels(card.id, nextLabels)
-
-    const response = await fetch(
-      `/api/boards/${board.id}/cards/${card.id}/labels`,
-      {
+      const response = await fetch(`/api/boards/${board.id}/cards/${card.id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          labelIds: nextLabels.map((label) => label.id),
-        }),
+        body: JSON.stringify({ cardType }),
+      })
+
+      if (!response.ok) {
+        updateCardType(card.id, previousType)
+        return toast({
+          title: msg.common.errorTitle,
+          description: msg.toast.cardTypeNotSaved,
+          variant: "destructive",
+        })
       }
-    )
 
-    if (!response.ok) {
-      updateCardLabels(card.id, previousLabels)
-      return toast({
-        title: msg.common.errorTitle,
-        description: msg.toast.cardLabelsNotSaved,
-        variant: "destructive",
+      const updatedCard = await response.json()
+      updateCardType(card.id, updatedCard.cardType)
+    },
+    [access.canEdit, board.id, updateCardType]
+  )
+
+  const updateCardLabelsFromMenu = React.useCallback(
+    async (card: BoardCardModel, nextLabels: BoardLabelModel[]) => {
+      if (!access.canEdit) return
+
+      const previousLabels = card.labels
+      updateCardLabels(card.id, nextLabels)
+
+      const response = await fetch(
+        `/api/boards/${board.id}/cards/${card.id}/labels`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            labelIds: nextLabels.map((label) => label.id),
+          }),
+        }
+      )
+
+      if (!response.ok) {
+        updateCardLabels(card.id, previousLabels)
+        return toast({
+          title: msg.common.errorTitle,
+          description: msg.toast.cardLabelsNotSaved,
+          variant: "destructive",
+        })
+      }
+
+      updateCardLabels(card.id, await response.json())
+    },
+    [access.canEdit, board.id, updateCardLabels]
+  )
+
+  const archiveCard = React.useCallback(
+    async (card: BoardCardModel) => {
+      if (!access.canEdit) return
+
+      const cardId = card.id
+
+      const response = await fetch(`/api/boards/${board.id}/cards/${cardId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ archived: true }),
       })
-    }
 
-    updateCardLabels(card.id, await response.json())
-  }
+      if (!response.ok) {
+        return toast({
+          title: msg.common.errorTitle,
+          description: `${msg.toast.cardNotArchived} ${msg.common.tryAgain}`,
+          variant: "destructive",
+        })
+      }
 
-  async function archiveCard(card: BoardCardModel) {
-    if (!access.canEdit) return
-
-    const cardId = card.id
-
-    const response = await fetch(`/api/boards/${board.id}/cards/${cardId}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ archived: true }),
-    })
-
-    if (!response.ok) {
-      return toast({
-        title: msg.common.errorTitle,
-        description: `${msg.toast.cardNotArchived} ${msg.common.tryAgain}`,
-        variant: "destructive",
-      })
-    }
-
-    setLists((current) =>
-      current.map((list) => ({
-        ...list,
-        cards: list.cards.filter((card) => card.id !== cardId),
-      }))
-    )
-    setSelectedCard((current) => (current?.id === cardId ? null : current))
-    router.refresh()
-    toast({ description: msg.toast.cardArchived })
-  }
+      setLists((current) =>
+        current.map((list) => ({
+          ...list,
+          cards: list.cards.filter((card) => card.id !== cardId),
+        }))
+      )
+      setSelectedCard((current) => (current?.id === cardId ? null : current))
+      router.refresh()
+      toast({ description: msg.toast.cardArchived })
+    },
+    [access.canEdit, board.id, router]
+  )
 
   async function archiveSelectedCard() {
     if (!selectedCard) return
@@ -2161,14 +2185,10 @@ export function BoardView({
                     onRenameList={renameList}
                     onArchiveList={archiveList}
                     onOpenCard={openCard}
-                    onArchiveCard={(card) => void archiveCard(card)}
-                    onCardTypeChange={(card, cardType) =>
-                      void updateCardTypeFromMenu(card, cardType)
-                    }
-                    onCardLabelsChange={(card, nextLabels) =>
-                      void updateCardLabelsFromMenu(card, nextLabels)
-                    }
-                    onEditLabels={() => setIsLabelsOpen(true)}
+                    onArchiveCard={archiveCard}
+                    onCardTypeChange={updateCardTypeFromMenu}
+                    onCardLabelsChange={updateCardLabelsFromMenu}
+                    onEditLabels={openLabelsManager}
                   />
                 ))}
               </SortableContext>

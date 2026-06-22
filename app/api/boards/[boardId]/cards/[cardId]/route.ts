@@ -247,6 +247,7 @@ export async function PATCH(req: Request, context: RouteContext) {
       return Response.json(error.issues, { status: 422 })
     }
 
+    console.error("[cards PATCH] failed to update card", error)
     return new Response(null, { status: 500 })
   }
 }
@@ -298,6 +299,7 @@ export async function DELETE(_req: Request, context: RouteContext) {
       return Response.json(error.issues, { status: 422 })
     }
 
+    console.error("[cards DELETE] failed to delete card", error)
     return new Response(null, { status: 500 })
   }
 }

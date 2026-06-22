@@ -85,6 +85,7 @@ model Board {
   members       BoardMember[]
   events        BoardEvent[]
   cardIdSequences BoardCardIdSequence[]
+  customFields  BoardCustomField[]
 
   author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
@@ -139,9 +140,10 @@ model BoardCard {
   updatedAt   DateTime  @updatedAt @map(name: "updated_at")
   listId      String    @map(name: "list_id")
 
-  list        BoardList              @relation(fields: [listId], references: [id], onDelete: Cascade)
-  comments    BoardCardComment[]
-  attachments BoardCardAttachment[]
+  list              BoardList                    @relation(fields: [listId], references: [id], onDelete: Cascade)
+  comments          BoardCardComment[]
+  attachments       BoardCardAttachment[]
+  customFieldValues BoardCardCustomFieldValue[]
 
   @@index([listId])
   @@index([displayId])
@@ -227,6 +229,70 @@ model Notification {
 
   @@index([userId, createdAt])
   @@map(name: "notifications")
+}
+
+enum BoardCustomFieldType {
+  TEXT
+  NUMBER
+  CHECKBOX
+  DATE
+  DROPDOWN
+}
+
+model BoardCustomField {
+  id          String               @id @default(cuid())
+  name        String
+  type        BoardCustomFieldType
+  order       Int                  @default(0) @map(name: "sort_order")
+  showOnFront Boolean              @default(false) @map(name: "show_on_front")
+  createdAt   DateTime             @default(now()) @map(name: "created_at")
+  updatedAt   DateTime             @updatedAt @map(name: "updated_at")
+  boardId     String               @map(name: "board_id")
+
+  board   Board                        @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  options BoardCustomFieldOption[]
+  values  BoardCardCustomFieldValue[]
+
+  @@index([boardId])
+  @@map(name: "board_custom_fields")
+}
+
+model BoardCustomFieldOption {
+  id        String   @id @default(cuid())
+  label     String
+  color     String
+  order     Int      @default(0) @map(name: "sort_order")
+  createdAt DateTime @default(now()) @map(name: "created_at")
+  updatedAt DateTime @updatedAt @map(name: "updated_at")
+  fieldId   String   @map(name: "field_id")
+
+  field  BoardCustomField            @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  values BoardCardCustomFieldValue[]
+
+  @@index([fieldId])
+  @@map(name: "board_custom_field_options")
+}
+
+model BoardCardCustomFieldValue {
+  id          String    @id @default(cuid())
+  textValue   String?   @map(name: "text_value")
+  numberValue Float?    @map(name: "number_value")
+  dateValue   DateTime? @map(name: "date_value") @db.Date
+  boolValue   Boolean?  @map(name: "bool_value")
+  createdAt   DateTime  @default(now()) @map(name: "created_at")
+  updatedAt   DateTime  @updatedAt @map(name: "updated_at")
+  cardId      String    @map(name: "card_id")
+  fieldId     String    @map(name: "field_id")
+  optionId    String?   @map(name: "option_id")
+
+  card   BoardCard               @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  field  BoardCustomField        @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  option BoardCustomFieldOption? @relation(fields: [optionId], references: [id], onDelete: SetNull)
+
+  @@unique([cardId, fieldId])
+  @@index([cardId])
+  @@index([fieldId])
+  @@map(name: "board_card_custom_field_values")
 }
 
 model BoardEvent {

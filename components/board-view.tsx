@@ -27,6 +27,7 @@ import { CSS } from "@dnd-kit/utilities"
 import {
   AlignLeft,
   Bell,
+  ListChecks,
   MessageSquare,
   MoreHorizontal,
   Pencil,
@@ -65,8 +66,13 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/components/ui/use-toast"
 import { BoardSwitcher, type BoardSummary } from "@/components/board-switcher"
+import { BoardCustomFieldsManager } from "@/components/board-custom-fields-manager"
 import { CardAttachments } from "@/components/card-attachments"
 import { CardComments } from "@/components/card-comments"
+import { CardCustomFields } from "@/components/card-custom-fields"
+import { CustomFieldBadges } from "@/components/custom-field-badges"
+import type { CustomFieldDefinitionModel } from "@/lib/custom-field-display"
+import type { CustomFieldClientValue } from "@/lib/custom-field-values"
 import { getMentionableUsers } from "@/lib/board-mentionable-users"
 import { Icons } from "@/components/icons"
 import { DashboardHeaderActions } from "@/components/dashboard-header-actions"
@@ -88,6 +94,7 @@ export type BoardCardModel = {
   description: string | null
   order: number
   listId: string
+  customFieldValues: CustomFieldClientValue[]
 }
 
 export type BoardListModel = {
@@ -116,6 +123,7 @@ export type BoardModel = {
   authorId: string
   members: BoardMemberModel[]
   lists: BoardListModel[]
+  customFields: CustomFieldDefinitionModel[]
 }
 
 export type BoardAccessModel = {
@@ -130,6 +138,13 @@ function initialsFor(member: BoardMemberModel) {
   return source.slice(0, 1).toUpperCase()
 }
 
+function normalizeCard(card: BoardCardModel): BoardCardModel {
+  return {
+    ...card,
+    customFieldValues: card.customFieldValues ?? [],
+  }
+}
+
 // Sort by the authoritative `order` field. Use only for server-provided data.
 function normalizeLists(lists: BoardListModel[]) {
   return [...lists]
@@ -139,11 +154,13 @@ function normalizeLists(lists: BoardListModel[]) {
       order: listIndex,
       cards: [...list.cards]
         .sort((a, b) => a.order - b.order)
-        .map((card, cardIndex) => ({
-          ...card,
-          listId: list.id,
-          order: cardIndex,
-        })),
+        .map((card, cardIndex) =>
+          normalizeCard({
+            ...card,
+            listId: list.id,
+            order: cardIndex,
+          })
+        ),
     }))
 }
 
@@ -154,11 +171,13 @@ function reindexLists(lists: BoardListModel[]) {
   return lists.map((list, listIndex) => ({
     ...list,
     order: listIndex,
-    cards: list.cards.map((card, cardIndex) => ({
-      ...card,
-      listId: list.id,
-      order: cardIndex,
-    })),
+    cards: list.cards.map((card, cardIndex) =>
+      normalizeCard({
+        ...card,
+        listId: list.id,
+        order: cardIndex,
+      })
+    ),
   }))
 }
 
@@ -189,9 +208,11 @@ function CardDisplayId({ displayId }: { displayId: string }) {
 
 function CardSurface({
   card,
+  customFields,
   className,
 }: {
   card: BoardCardModel
+  customFields: CustomFieldDefinitionModel[]
   className?: string
 }) {
   return (
@@ -205,6 +226,10 @@ function CardSurface({
       <p className="break-words text-sm font-medium leading-snug">
         {card.title}
       </p>
+      <CustomFieldBadges
+        fields={customFields}
+        values={card.customFieldValues}
+      />
       {card.description && (
         <div className="mt-2 flex items-center gap-1.5 text-muted-foreground">
           <AlignLeft className="h-3.5 w-3.5 shrink-0" />
@@ -216,11 +241,13 @@ function CardSurface({
 
 function SortableCard({
   card,
+  customFields,
   canEdit,
   hasUnreadMention,
   onOpen,
 }: {
   card: BoardCardModel
+  customFields: CustomFieldDefinitionModel[]
   canEdit: boolean
   hasUnreadMention: boolean
   onOpen: (card: BoardCardModel) => void
@@ -268,6 +295,10 @@ function SortableCard({
       <p className="break-words text-sm font-medium leading-snug">
         {card.title}
       </p>
+      <CustomFieldBadges
+        fields={customFields}
+        values={card.customFieldValues}
+      />
       {card.description && (
         <div className="mt-2 flex items-center gap-1.5 text-muted-foreground">
           <AlignLeft className="h-3.5 w-3.5 shrink-0" />
@@ -359,6 +390,7 @@ function CardComposer({
 
 function BoardListColumn({
   list,
+  customFields,
   canEdit,
   isOver,
   cardDraft,
@@ -370,6 +402,7 @@ function BoardListColumn({
   onOpenCard,
 }: {
   list: BoardListModel
+  customFields: CustomFieldDefinitionModel[]
   canEdit: boolean
   isOver: boolean
   cardDraft: string
@@ -503,6 +536,7 @@ function BoardListColumn({
             <SortableCard
               key={card.id}
               card={card}
+              customFields={customFields}
               canEdit={canEdit}
               hasUnreadMention={mentionedCardIds.has(card.id)}
               onOpen={onOpenCard}
@@ -527,7 +561,13 @@ function BoardListColumn({
   )
 }
 
-function ListSurface({ list }: { list: BoardListModel }) {
+function ListSurface({
+  list,
+  customFields,
+}: {
+  list: BoardListModel
+  customFields: CustomFieldDefinitionModel[]
+}) {
   return (
     <section className="flex w-[280px] flex-col gap-2 rounded-xl border border-black/5 bg-muted/90 p-2 shadow-2xl backdrop-blur-sm dark:border-white/5">
       <div className="flex items-center gap-2 px-1 pt-1">
@@ -537,7 +577,11 @@ function ListSurface({ list }: { list: BoardListModel }) {
         </span>
       </div>
       {list.cards.slice(0, 5).map((card) => (
-        <CardSurface key={card.id} card={card} />
+        <CardSurface
+          key={card.id}
+          card={card}
+          customFields={customFields}
+        />
       ))}
     </section>
   )
@@ -690,6 +734,8 @@ export function BoardView({
     React.useState<"EDITOR" | "VIEWER">("EDITOR")
   const [isShareOpen, setIsShareOpen] = React.useState(false)
   const [isDetailsOpen, setIsDetailsOpen] = React.useState(false)
+  const [isCustomFieldsOpen, setIsCustomFieldsOpen] = React.useState(false)
+  const [customFields, setCustomFields] = React.useState(board.customFields)
   const [isRealtimeConnected, setIsRealtimeConnected] = React.useState(false)
   const [cardDrafts, setCardDrafts] = React.useState<Record<string, string>>({})
   const [listDraft, setListDraft] = React.useState("")
@@ -745,6 +791,7 @@ export function BoardView({
     setCardIdPattern(board.cardIdPattern ?? "")
     setLists(normalizeLists(board.lists))
     setMembers(board.members)
+    setCustomFields(board.customFields)
   }, [board])
 
   React.useEffect(() => {
@@ -781,8 +828,27 @@ export function BoardView({
   }, [selectedCard])
 
   function openCard(card: BoardCardModel) {
-    setSelectedCard(card)
+    setSelectedCard(normalizeCard(card))
     void markCardMentionsRead(card.id)
+  }
+
+  function updateCardCustomFieldValues(
+    cardId: string,
+    values: CustomFieldClientValue[]
+  ) {
+    setLists((current) =>
+      current.map((list) => ({
+        ...list,
+        cards: list.cards.map((card) =>
+          card.id === cardId ? { ...card, customFieldValues: values } : card
+        ),
+      }))
+    )
+    setSelectedCard((current) =>
+      current?.id === cardId
+        ? { ...current, customFieldValues: values }
+        : current
+    )
   }
 
   async function saveBoardDetails() {
@@ -1150,7 +1216,10 @@ export function BoardView({
       })
     }
 
-    const card = await response.json()
+    const card = {
+      ...(await response.json()),
+      customFieldValues: [] as CustomFieldClientValue[],
+    }
     setLists((current) =>
       normalizeLists(
         current.map((list) =>
@@ -1195,7 +1264,10 @@ export function BoardView({
       })
     }
 
-    const card = await response.json()
+    const card = normalizeCard({
+      ...(await response.json()),
+      customFieldValues: selectedCard.customFieldValues,
+    })
     setLists((current) =>
       normalizeLists(
         current.map((list) => ({
@@ -1427,6 +1499,12 @@ export function BoardView({
                     </DropdownMenuItem>
                   )}
                   {access.canManage && (
+                    <DropdownMenuItem onSelect={() => setIsCustomFieldsOpen(true)}>
+                      <ListChecks className="mr-2 h-4 w-4" />
+                      Custom fields
+                    </DropdownMenuItem>
+                  )}
+                  {access.canManage && (
                     <DropdownMenuItem onSelect={() => setIsShareOpen(true)}>
                       <UserPlus className="mr-2 h-4 w-4" />
                       Manage members
@@ -1470,6 +1548,7 @@ export function BoardView({
                 <BoardListColumn
                   key={list.id}
                   list={list}
+                  customFields={customFields}
                   canEdit={access.canEdit}
                   isOver={overListId === list.id && activeType === "card"}
                   cardDraft={cardDrafts[list.id] ?? ""}
@@ -1507,10 +1586,11 @@ export function BoardView({
             {activeType === "card" && activeCard ? (
               <CardSurface
                 card={activeCard}
+                customFields={customFields}
                 className="w-[264px] rotate-2 cursor-grabbing shadow-xl"
               />
             ) : activeType === "list" && activeList ? (
-              <ListSurface list={activeList} />
+              <ListSurface list={activeList} customFields={customFields} />
             ) : null}
           </DragOverlay>
         </DndContext>
@@ -1613,6 +1693,14 @@ export function BoardView({
           </div>
         </DialogContent>
       </Dialog>
+
+      <BoardCustomFieldsManager
+        boardId={board.id}
+        fields={customFields}
+        open={isCustomFieldsOpen}
+        onOpenChange={setIsCustomFieldsOpen}
+        onFieldsChange={setCustomFields}
+      />
 
       {/* Board details dialog */}
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
@@ -1780,6 +1868,17 @@ export function BoardView({
                       )}
                     </div>
                   </section>
+
+                  <CardCustomFields
+                    boardId={board.id}
+                    cardId={selectedCard.id}
+                    fields={customFields}
+                    values={selectedCard.customFieldValues ?? []}
+                    canEdit={access.canEdit}
+                    onValuesChange={(values) =>
+                      updateCardCustomFieldValues(selectedCard.id, values)
+                    }
+                  />
 
                   <CardAttachments
                     boardId={board.id}

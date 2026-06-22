@@ -1,6 +1,10 @@
 import * as z from "zod"
 
 import { validateCardIdPattern } from "@/lib/card-id-pattern"
+import { isValidCustomFieldColor } from "@/lib/custom-field-colors"
+
+export const MAX_CUSTOM_FIELDS_PER_BOARD = 50
+export const MAX_CUSTOM_FIELD_OPTIONS = 50
 
 const cardIdPatternSchema = z
   .string()
@@ -129,4 +133,85 @@ export const boardMemberCreateSchema = z.object({
 
 export const boardMemberPatchSchema = z.object({
   role: boardMemberRoleSchema,
+})
+
+export const customFieldTypeSchema = z.enum([
+  "TEXT",
+  "NUMBER",
+  "CHECKBOX",
+  "DATE",
+  "DROPDOWN",
+])
+
+const customFieldOptionSchema = z.object({
+  label: z.string().trim().min(1).max(80),
+  color: z
+    .string()
+    .trim()
+    .superRefine((value, ctx) => {
+      if (!isValidCustomFieldColor(value)) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Color must be one of the supported presets.",
+        })
+      }
+    }),
+})
+
+const customFieldOptionsSchema = z
+  .array(customFieldOptionSchema)
+  .min(1)
+  .max(MAX_CUSTOM_FIELD_OPTIONS)
+
+export const customFieldCreateSchema = z
+  .object({
+    name: z.string().trim().min(1).max(80),
+    type: customFieldTypeSchema,
+    showOnFront: z.boolean().optional(),
+    options: customFieldOptionsSchema.optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.type === "DROPDOWN" && !data.options?.length) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Dropdown fields require at least one option.",
+        path: ["options"],
+      })
+    }
+    if (data.type !== "DROPDOWN" && data.options?.length) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Options are only supported for dropdown fields.",
+        path: ["options"],
+      })
+    }
+  })
+
+export const customFieldPatchSchema = z
+  .object({
+    name: z.string().trim().min(1).max(80).optional(),
+    showOnFront: z.boolean().optional(),
+    options: customFieldOptionsSchema.optional(),
+  })
+  .refine(
+    (data) =>
+      data.name !== undefined ||
+      data.showOnFront !== undefined ||
+      data.options !== undefined,
+    {
+      message: "At least one field must be provided.",
+    }
+  )
+
+export const customFieldReorderSchema = z.object({
+  fieldIds: z.array(z.string().min(1)),
+})
+
+export const cardCustomFieldsPatchSchema = z.object({
+  values: z.array(
+    z.object({
+      fieldId: z.string().min(1),
+      value: z.union([z.string(), z.number(), z.boolean(), z.null()]),
+    })
+  ),
 })

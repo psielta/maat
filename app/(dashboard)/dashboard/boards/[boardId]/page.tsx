@@ -5,6 +5,8 @@ import { getBoardAccess } from "@/lib/board-access"
 import { db } from "@/lib/db"
 import { getCurrentUser } from "@/lib/session"
 import { BoardView } from "@/components/board-view"
+import { customFieldSelect, customFieldValueSelect } from "@/lib/custom-field-select"
+import { serializeCustomFieldValueRow } from "@/lib/custom-field-serialize"
 
 interface BoardPageProps {
   params: Promise<{
@@ -36,6 +38,12 @@ export default async function BoardPage({ params }: BoardPageProps) {
       description: true,
       cardIdPattern: true,
       authorId: true,
+      customFields: {
+        select: customFieldSelect,
+        orderBy: {
+          order: "asc",
+        },
+      },
       members: {
         select: {
           id: true,
@@ -71,6 +79,9 @@ export default async function BoardPage({ params }: BoardPageProps) {
               description: true,
               order: true,
               listId: true,
+              customFieldValues: {
+                select: customFieldValueSelect,
+              },
             },
             orderBy: {
               order: "asc",
@@ -104,9 +115,33 @@ export default async function BoardPage({ params }: BoardPageProps) {
     },
   })
 
+  const boardForView = {
+    ...board,
+    customFields: board.customFields.map((field) => ({
+      id: field.id,
+      name: field.name,
+      type: field.type,
+      order: field.order,
+      showOnFront: field.showOnFront,
+      options: field.options.map((option) => ({
+        id: option.id,
+        label: option.label,
+        color: option.color,
+        order: option.order,
+      })),
+    })),
+    lists: board.lists.map((list) => ({
+      ...list,
+      cards: list.cards.map((card) => ({
+        ...card,
+        customFieldValues: card.customFieldValues.map(serializeCustomFieldValueRow),
+      })),
+    })),
+  }
+
   return (
     <BoardView
-      board={board}
+      board={boardForView}
       access={access}
       user={{
         id: user.id,

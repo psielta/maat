@@ -36,6 +36,13 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN corepack pnpm exec prisma generate
 RUN corepack pnpm build
+# pnpm guarda o Prisma Client gerado (com o engine Linux) dentro do store .pnpm e
+# expoe @prisma/client por symlink. Deref para um staging com arquivos reais, que
+# o runner copia para o node_modules do standalone.
+RUN STORE="$(dirname "$(dirname "$(readlink -f node_modules/@prisma/client)")")" \
+  && mkdir -p /prisma-deps/@prisma \
+  && cp -rL "$STORE/.prisma" /prisma-deps/.prisma \
+  && cp -rL "$STORE/@prisma/client" /prisma-deps/@prisma/client
 
 # --- migrate: one-shot `prisma migrate deploy` (tem prisma CLI + migrations) ---
 FROM deps AS migrate
@@ -52,7 +59,7 @@ COPY --from=build /app/public ./public
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
 # Garante o Prisma Client + engine (externalizado via serverExternalPackages).
-COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=build /app/node_modules/@prisma/client ./node_modules/@prisma/client
+COPY --from=build /prisma-deps/.prisma ./node_modules/.prisma
+COPY --from=build /prisma-deps/@prisma ./node_modules/@prisma
 EXPOSE 14500
 CMD ["node", "server.js"]

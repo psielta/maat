@@ -6,6 +6,12 @@ import { LayoutTemplate, Plus } from "lucide-react"
 import type { BoardCardModel, BoardListModel } from "@/components/board-view"
 import { Button } from "@/components/ui/button"
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -91,15 +97,26 @@ export function CreateFromTemplateMenu({
         }
       }}
     >
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
-        >
-          <LayoutTemplate className="h-4 w-4" />
-          Create from template
-        </button>
-      </DropdownMenuTrigger>
+      <TooltipProvider delayDuration={300}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 shrink-0 p-0 text-muted-foreground hover:text-foreground"
+                aria-label="Create from template"
+              >
+                <LayoutTemplate className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+          </TooltipTrigger>
+          <TooltipContent side="top">
+            Create a card from a template
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
       <DropdownMenuContent align="start" className="w-72">
         {isLoading ? (
           <DropdownMenuItem disabled>Loading templates…</DropdownMenuItem>

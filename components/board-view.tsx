@@ -391,10 +391,12 @@ function CardComposer({
   value,
   onChange,
   onSubmit,
+  trailingAction,
 }: {
   value: string
   onChange: (value: string) => void
   onSubmit: () => void
+  trailingAction?: React.ReactNode
 }) {
   const [isOpen, setIsOpen] = React.useState(false)
   const textareaRef = React.useRef<HTMLTextAreaElement>(null)
@@ -412,14 +414,17 @@ function CardComposer({
 
   if (!isOpen) {
     return (
-      <button
-        type="button"
-        onClick={() => setIsOpen(true)}
-        className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
-      >
-        <Icons.add className="h-4 w-4" />
-        Add a card
-      </button>
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => setIsOpen(true)}
+          className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-2 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
+        >
+          <Icons.add className="h-4 w-4 shrink-0" />
+          Add a card
+        </button>
+        {trailingAction}
+      </div>
     )
   }
 
@@ -459,6 +464,7 @@ function CardComposer({
         >
           <X className="h-4 w-4" />
         </button>
+        {trailingAction}
       </div>
     </form>
   )
@@ -626,17 +632,19 @@ function BoardListColumn({
       </div>
 
       {canEdit && (
-        <div className="space-y-1 p-2 pt-0">
+        <div className="p-2 pt-0">
           <CardComposer
             value={cardDraft}
             onChange={(value) => onCardDraftChange(list.id, value)}
             onSubmit={() => onCreateCard(list.id)}
-          />
-          <CreateFromTemplateMenu
-            boardId={boardId}
-            listId={list.id}
-            canEdit={canEdit}
-            onCardCreated={(card) => onTemplateCardCreated(card, list.id)}
+            trailingAction={
+              <CreateFromTemplateMenu
+                boardId={boardId}
+                listId={list.id}
+                canEdit={canEdit}
+                onCardCreated={(card) => onTemplateCardCreated(card, list.id)}
+              />
+            }
           />
         </div>
       )}

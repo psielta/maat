@@ -3,7 +3,7 @@ import type { Prisma } from "@prisma/client"
 import { db } from "@/lib/db"
 import { messages } from "@/lib/messages/pt-br"
 
-const TOKEN_REGEX = /\{(Number(?::(\d+))?|Date|Year|Month|Day)\}/g
+const TOKEN_REGEX = /\{(Number|Date|Year|Month|Day)(?::(\d+))?\}/g
 const VALID_PATTERN_REGEX = /^[A-Za-z0-9_{}: -]+$/
 
 export const CARD_ID_PATTERN_TOKENS = [

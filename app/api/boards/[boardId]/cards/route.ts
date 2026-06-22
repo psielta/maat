@@ -110,6 +110,7 @@ export async function POST(req: Request, context: RouteContext) {
       return Response.json(error.issues, { status: 422 })
     }
 
+    console.error("Failed to create board card", error)
     return new Response(null, { status: 500 })
   }
 }

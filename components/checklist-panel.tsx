@@ -22,6 +22,7 @@ import { GripVertical, Pencil, Trash2 } from "lucide-react"
 
 import type { ChecklistItemModel, ChecklistModel } from "@/lib/checklist-display"
 import { getChecklistProgress } from "@/lib/checklist-display"
+import { m } from "@/lib/i18n"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
@@ -50,6 +51,7 @@ function SortableChecklistItem({
   onTextChange: (itemId: string, text: string) => void
   onDelete: (itemId: string) => void
 }) {
+  const msgs = m()
   const [isEditing, setIsEditing] = React.useState(false)
   const [draft, setDraft] = React.useState(item.text)
   const {
@@ -98,7 +100,7 @@ function SortableChecklistItem({
         <button
           type="button"
           className="mt-0.5 cursor-grab touch-none text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 active:cursor-grabbing"
-          aria-label="Reorder item"
+          aria-label={msgs.checklist.reorderItem}
           {...attributes}
           {...listeners}
         >
@@ -151,7 +153,7 @@ function SortableChecklistItem({
           size="sm"
           className="h-7 w-7 shrink-0 px-0 opacity-0 transition-opacity group-hover:opacity-100"
           onClick={() => onDelete(item.id)}
-          aria-label="Delete item"
+          aria-label={msgs.checklist.deleteItem}
         >
           <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
         </Button>
@@ -175,6 +177,7 @@ export function ChecklistPanel({
   onChecklistChange: (next: ChecklistModel) => void
   onChecklistDelete: () => void
 }) {
+  const msgs = m()
   const [items, setItems] = React.useState(checklist.items)
   const [titleDraft, setTitleDraft] = React.useState(checklist.title)
   const [isEditingTitle, setIsEditingTitle] = React.useState(false)
@@ -229,8 +232,8 @@ export function ChecklistPanel({
       setItems(previousItems)
       syncChecklist(previousItems)
       toast({
-        title: "Something went wrong.",
-        description: "Checklist item was not saved. Please try again.",
+        title: msgs.common.errorTitle,
+        description: msgs.toast.checklistItemNotSaved,
         variant: "destructive",
       })
       return
@@ -283,8 +286,8 @@ export function ChecklistPanel({
       setItems(previousItems)
       syncChecklist(previousItems)
       toast({
-        title: "Something went wrong.",
-        description: "Checklist item was not deleted. Please try again.",
+        title: msgs.common.errorTitle,
+        description: msgs.toast.checklistItemNotDeleted,
         variant: "destructive",
       })
     }
@@ -315,8 +318,8 @@ export function ChecklistPanel({
 
     if (!response.ok) {
       toast({
-        title: "Something went wrong.",
-        description: "Checklist item was not added. Please try again.",
+        title: msgs.common.errorTitle,
+        description: msgs.toast.checklistItemNotAdded,
         variant: "destructive",
       })
       return
@@ -352,8 +355,8 @@ export function ChecklistPanel({
     if (!response.ok) {
       setTitleDraft(checklist.title)
       toast({
-        title: "Something went wrong.",
-        description: "Checklist was not renamed. Please try again.",
+        title: msgs.common.errorTitle,
+        description: msgs.toast.checklistNotRenamed,
         variant: "destructive",
       })
       return
@@ -368,7 +371,7 @@ export function ChecklistPanel({
   }
 
   async function handleDeleteChecklist() {
-    if (!window.confirm("Delete this checklist and all of its items?")) {
+    if (!window.confirm(msgs.checklist.confirmDelete)) {
       return
     }
 
@@ -381,8 +384,8 @@ export function ChecklistPanel({
 
     if (!response.ok) {
       toast({
-        title: "Something went wrong.",
-        description: "Checklist was not deleted. Please try again.",
+        title: msgs.common.errorTitle,
+        description: msgs.toast.checklistNotDeleted,
         variant: "destructive",
       })
       return
@@ -427,8 +430,8 @@ export function ChecklistPanel({
       setItems(previousItems)
       syncChecklist(previousItems)
       toast({
-        title: "Something went wrong.",
-        description: "Checklist order was not saved. Please try again.",
+        title: msgs.common.errorTitle,
+        description: msgs.toast.checklistOrderNotSaved,
         variant: "destructive",
       })
     }
@@ -465,7 +468,7 @@ export function ChecklistPanel({
                 size="sm"
                 className="h-7 w-7 shrink-0 px-0"
                 onClick={() => setIsEditingTitle(true)}
-                aria-label="Rename checklist"
+                aria-label={msgs.checklist.renameChecklist}
               >
                 <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
               </Button>
@@ -479,7 +482,7 @@ export function ChecklistPanel({
             size="sm"
             className="h-7 w-7 shrink-0 px-0"
             onClick={handleDeleteChecklist}
-            aria-label="Delete checklist"
+            aria-label={msgs.checklist.deleteChecklist}
           >
             <Icons.trash className="h-3.5 w-3.5 text-muted-foreground" />
           </Button>
@@ -490,7 +493,10 @@ export function ChecklistPanel({
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>
-              {progress.percent}% complete
+              {msgs.common.percentComplete.replace(
+                "{percent}",
+                String(progress.percent)
+              )}
             </span>
             <span>
               {progress.completed}/{progress.total}
@@ -529,7 +535,7 @@ export function ChecklistPanel({
           <Input
             value={newItemDraft}
             onChange={(event) => setNewItemDraft(event.target.value)}
-            placeholder="Add an item"
+            placeholder={msgs.checklist.addItem}
             className="h-8 flex-1 text-sm"
             disabled={isAddingItem}
           />
@@ -539,7 +545,7 @@ export function ChecklistPanel({
             className="h-8"
             disabled={!newItemDraft.trim() || isAddingItem}
           >
-            Add
+            {msgs.common.add}
           </Button>
         </form>
       )}

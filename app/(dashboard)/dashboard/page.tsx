@@ -5,13 +5,14 @@ import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { getCurrentUser } from "@/lib/session"
 import { siteConfig } from "@/config/site"
+import { messages } from "@/lib/messages/pt-br"
 import { BoardCreateButton } from "@/components/board-create-button"
 import { EmptyPlaceholder } from "@/components/empty-placeholder"
 import { Icons } from "@/components/icons"
 import { DashboardHeaderActions } from "@/components/dashboard-header-actions"
 
 export const metadata = {
-  title: "Dashboard",
+  title: messages.legal.dashboardTitle,
 }
 
 export default async function DashboardPage() {
@@ -59,9 +60,9 @@ export default async function DashboardPage() {
       <div className="flex flex-1 items-center justify-center p-6">
         <EmptyPlaceholder className="mx-auto max-w-md">
           <EmptyPlaceholder.Icon name="boards" />
-          <EmptyPlaceholder.Title>No boards yet</EmptyPlaceholder.Title>
+          <EmptyPlaceholder.Title>{messages.marketing.noBoards}</EmptyPlaceholder.Title>
           <EmptyPlaceholder.Description>
-            Create your first board to organize work into lists and cards.
+            {messages.marketing.noBoardsDesc}
           </EmptyPlaceholder.Description>
           <BoardCreateButton />
         </EmptyPlaceholder>

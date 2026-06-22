@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { Check, ChevronDown } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { m } from "@/lib/i18n"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -17,6 +18,8 @@ import {
 } from "@/components/ui/sheet"
 import { toast } from "@/components/ui/use-toast"
 import { Icons } from "@/components/icons"
+
+const msg = m()
 
 export type BoardSummary = {
   id: string
@@ -40,7 +43,7 @@ export function BoardSwitcher({
   async function createBoard(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    const title = draft.trim() || "Untitled board"
+    const title = draft.trim() || "Board sem título"
     setIsCreating(true)
 
     const response = await fetch("/api/boards", {
@@ -50,7 +53,7 @@ export function BoardSwitcher({
       },
       body: JSON.stringify({
         title,
-        description: "Plan, prioritize, and move work across the board.",
+        description: "Planeje, priorize e mova o trabalho pelo board.",
       }),
     })
 
@@ -58,8 +61,8 @@ export function BoardSwitcher({
 
     if (!response.ok) {
       return toast({
-        title: "Something went wrong.",
-        description: "Your board was not created. Please try again.",
+        title: msg.common.errorTitle,
+        description: `O board não foi criado. ${msg.common.tryAgain}`,
         variant: "destructive",
       })
     }
@@ -80,7 +83,7 @@ export function BoardSwitcher({
         >
           <Icons.boards className="h-4 w-4 shrink-0 text-primary" />
           <span className="hidden truncate sm:inline">
-            {current ? current.title : "Boards"}
+            {current ? current.title : msg.nav.boards}
           </span>
           <ChevronDown className="h-4 w-4 shrink-0 opacity-60" />
         </button>
@@ -92,13 +95,13 @@ export function BoardSwitcher({
       >
         <div className="flex h-full flex-col">
           <SheetHeader className="border-b p-4 text-left">
-            <SheetTitle>Your boards</SheetTitle>
+            <SheetTitle>Seus boards</SheetTitle>
           </SheetHeader>
 
           <div className="flex-1 space-y-1 overflow-y-auto p-2">
             {boards.length === 0 && (
               <p className="px-2 py-4 text-sm text-muted-foreground">
-                No boards yet. Create your first one below.
+                {msg.marketing.noBoardsDesc}
               </p>
             )}
             {boards.map((board) => {
@@ -125,7 +128,7 @@ export function BoardSwitcher({
             <Input
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
-              placeholder="New board name"
+              placeholder={msg.board.newBoardPlaceholder}
             />
             <Button type="submit" className="w-full" disabled={isCreating}>
               {isCreating ? (
@@ -133,7 +136,7 @@ export function BoardSwitcher({
               ) : (
                 <Icons.add className="mr-2 h-4 w-4" />
               )}
-              Create board
+              Criar board
             </Button>
           </form>
         </div>

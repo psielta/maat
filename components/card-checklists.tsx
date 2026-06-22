@@ -8,6 +8,7 @@ import { sortChecklists } from "@/lib/checklist-display"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/components/ui/use-toast"
 import { ChecklistPanel } from "@/components/checklist-panel"
+import { m } from "@/lib/i18n"
 
 export function CardChecklists({
   boardId,
@@ -22,6 +23,7 @@ export function CardChecklists({
   canEdit: boolean
   onChecklistsChange: (checklists: ChecklistModel[]) => void
 }) {
+  const msgs = m()
   const [isCreating, setIsCreating] = React.useState(false)
   const sortedChecklists = React.useMemo(
     () => sortChecklists(checklists),
@@ -66,8 +68,8 @@ export function CardChecklists({
 
     if (!response.ok) {
       toast({
-        title: "Something went wrong.",
-        description: "Checklist was not created. Please try again.",
+        title: msgs.common.errorTitle,
+        description: msgs.toast.checklistNotCreated,
         variant: "destructive",
       })
       return
@@ -82,7 +84,7 @@ export function CardChecklists({
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <ListChecks className="h-4 w-4 text-muted-foreground" />
-          <h3 className="text-sm font-semibold">Checklists</h3>
+          <h3 className="text-sm font-semibold">{msgs.card.checklists}</h3>
         </div>
         {canEdit && (
           <Button
@@ -93,7 +95,7 @@ export function CardChecklists({
             onClick={addChecklist}
             disabled={isCreating}
           >
-            Add checklist
+            {msgs.card.addChecklist}
           </Button>
         )}
       </div>
@@ -101,9 +103,7 @@ export function CardChecklists({
       <div className="space-y-3 pl-6">
         {sortedChecklists.length === 0 ? (
           <p className="text-xs text-muted-foreground">
-            {canEdit
-              ? "No checklists yet. Add one to track subtasks on this card."
-              : "No checklists on this card."}
+            {canEdit ? msgs.card.noChecklists : msgs.card.noChecklistsOnCard}
           </p>
         ) : (
           sortedChecklists.map((checklist) => (

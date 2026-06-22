@@ -64,6 +64,7 @@ import {
   ImageNode,
 } from "@/lib/lexical/image-node"
 import { MentionNode } from "@/lib/lexical/mention-node"
+import { m } from "@/lib/i18n"
 import { uploadInlineImage } from "@/lib/upload-inline-image"
 import { MAX_INLINE_IMAGES_PER_CONTENT } from "@/lib/validations/board"
 import { cn } from "@/lib/utils"
@@ -200,6 +201,7 @@ function ToolbarButton({
 }
 
 function ImageToolbarButton() {
+  const msgs = m()
   const { insertImageFile, isUploading } = useImageEditorContext()
   const inputRef = React.useRef<HTMLInputElement>(null)
 
@@ -219,7 +221,7 @@ function ImageToolbarButton() {
         }}
       />
       <ToolbarButton
-        label="Insert image"
+        label={msgs.editor.insertImage}
         disabled={isUploading}
         onClick={() => inputRef.current?.click()}
       >
@@ -230,6 +232,7 @@ function ImageToolbarButton() {
 }
 
 function Toolbar({ enableImages }: { enableImages?: boolean }) {
+  const msgs = m()
   const [editor] = useLexicalComposerContext()
   const [formats, setFormats] = React.useState({
     bold: false,
@@ -315,28 +318,28 @@ function Toolbar({ enableImages }: { enableImages?: boolean }) {
   return (
     <div className="flex flex-wrap items-center gap-0.5 border-b bg-muted/40 px-1.5 py-1">
       <ToolbarButton
-        label="Bold"
+        label={msgs.editor.bold}
         active={formats.bold}
         onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "bold")}
       >
         <Bold className="h-4 w-4" />
       </ToolbarButton>
       <ToolbarButton
-        label="Italic"
+        label={msgs.editor.italic}
         active={formats.italic}
         onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "italic")}
       >
         <Italic className="h-4 w-4" />
       </ToolbarButton>
       <ToolbarButton
-        label="Underline"
+        label={msgs.editor.underline}
         active={formats.underline}
         onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "underline")}
       >
         <Underline className="h-4 w-4" />
       </ToolbarButton>
       <ToolbarButton
-        label="Strikethrough"
+        label={msgs.editor.strikethrough}
         active={formats.strikethrough}
         onClick={() =>
           editor.dispatchCommand(FORMAT_TEXT_COMMAND, "strikethrough")
@@ -346,21 +349,21 @@ function Toolbar({ enableImages }: { enableImages?: boolean }) {
       </ToolbarButton>
       <span className="mx-1 h-5 w-px bg-border" />
       <ToolbarButton
-        label="Heading"
+        label={msgs.editor.heading}
         active={blockType === "h3"}
         onClick={() => toggleBlock("h3")}
       >
         <Heading3 className="h-4 w-4" />
       </ToolbarButton>
       <ToolbarButton
-        label="Bulleted list"
+        label={msgs.editor.bulletedList}
         active={blockType === "bullet"}
         onClick={() => toggleBlock("bullet")}
       >
         <List className="h-4 w-4" />
       </ToolbarButton>
       <ToolbarButton
-        label="Numbered list"
+        label={msgs.editor.numberedList}
         active={blockType === "number"}
         onClick={() => toggleBlock("number")}
       >
@@ -385,6 +388,7 @@ function ImageEditorShell({
   editable: boolean
   children: React.ReactNode
 }) {
+  const msgs = m()
   const [editor] = useLexicalComposerContext()
   const [previewUrls, setPreviewUrls] = React.useState(
     () => new Map<string, string>()
@@ -409,8 +413,11 @@ function ImageEditorShell({
       const imageCount = editor.getEditorState().read(() => countImageNodes())
       if (imageCount >= MAX_INLINE_IMAGES_PER_CONTENT) {
         toast({
-          title: "Image limit reached.",
-          description: `You can add up to ${MAX_INLINE_IMAGES_PER_CONTENT} images.`,
+          title: msgs.editor.imageLimitReached,
+          description: msgs.editor.imageLimitDescription.replace(
+            "{max}",
+            String(MAX_INLINE_IMAGES_PER_CONTENT)
+          ),
           variant: "destructive",
         })
         return
@@ -427,9 +434,9 @@ function ImageEditorShell({
         insertImageNode(editor, attachment.id)
       } catch (error) {
         toast({
-          title: "Image upload failed.",
+          title: msgs.editor.imageUploadFailed,
           description:
-            error instanceof Error ? error.message : "Please try again.",
+            error instanceof Error ? error.message : msgs.common.tryAgain,
           variant: "destructive",
         })
         throw error
@@ -463,7 +470,7 @@ export function RichTextEditor({
   value,
   editable = true,
   onChange,
-  placeholder = "Add a more detailed description…",
+  placeholder,
   className,
   mentionableUsers,
   uploadContext,
@@ -476,6 +483,8 @@ export function RichTextEditor({
   mentionableUsers?: MentionableUser[]
   uploadContext?: ImageUploadContext
 }) {
+  const msgs = m()
+  const resolvedPlaceholder = placeholder ?? msgs.card.descriptionPlaceholder
   const initialConfig = {
     namespace: "card-description",
     editable,
@@ -518,7 +527,7 @@ export function RichTextEditor({
               }
               placeholder={
                 <div className="pointer-events-none absolute left-3 top-2 select-none text-sm text-muted-foreground">
-                  {editable ? placeholder : "No description yet."}
+                  {editable ? resolvedPlaceholder : msgs.editor.noDescriptionYet}
                 </div>
               }
               ErrorBoundary={LexicalErrorBoundary}

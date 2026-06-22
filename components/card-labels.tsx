@@ -7,6 +7,7 @@ import type { BoardLabelModel } from "@/lib/label-display"
 import { getLabelDisplayName } from "@/lib/label-display"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/components/ui/use-toast"
+import { m } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 
 export function CardLabels({
@@ -28,6 +29,7 @@ export function CardLabels({
   onLabelsChange: (labels: BoardLabelModel[]) => void
   onEditLabels?: () => void
 }) {
+  const msgs = m()
   const selectedIds = React.useMemo(
     () => new Set(cardLabels.map((label) => label.id)),
     [cardLabels]
@@ -55,8 +57,8 @@ export function CardLabels({
     if (!response.ok) {
       onLabelsChange(previousLabels)
       toast({
-        title: "Something went wrong.",
-        description: "Card labels were not saved. Please try again.",
+        title: msgs.common.errorTitle,
+        description: msgs.toast.cardLabelsNotSaved,
         variant: "destructive",
       })
       return
@@ -86,7 +88,7 @@ export function CardLabels({
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Tags className="h-4 w-4 text-muted-foreground" />
-          <h3 className="text-sm font-semibold">Labels</h3>
+          <h3 className="text-sm font-semibold">{msgs.card.labels}</h3>
         </div>
         {canManage && onEditLabels && (
           <Button
@@ -96,7 +98,7 @@ export function CardLabels({
             className="h-7 text-xs"
             onClick={onEditLabels}
           >
-            Edit labels
+            {msgs.card.editLabels}
           </Button>
         )}
       </div>
@@ -105,8 +107,8 @@ export function CardLabels({
         {boardLabels.length === 0 ? (
           <p className="text-xs text-muted-foreground">
             {canManage
-              ? "No labels yet. Use Edit labels to create board labels."
-              : "No labels on this board."}
+              ? msgs.card.noLabelsCreateHint
+              : msgs.card.noLabelsOnBoard}
           </p>
         ) : (
           <div className="flex flex-wrap gap-2">

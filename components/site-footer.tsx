@@ -2,6 +2,7 @@ import * as React from "react"
 
 import { siteConfig } from "@/config/site"
 import { cn } from "@/lib/utils"
+import { messages } from "@/lib/messages/pt-br"
 import { Icons } from "@/components/icons"
 import { ModeToggle } from "@/components/mode-toggle"
 
@@ -12,17 +13,16 @@ export function SiteFooter({ className }: React.HTMLAttributes<HTMLElement>) {
         <div className="flex flex-col items-center gap-4 px-8 md:flex-row md:gap-2 md:px-0">
           <Icons.logo />
           <p className="text-center text-sm leading-loose md:text-left">
-            {siteConfig.name} is a portfolio project for personal developer
-            task management. Source code is available on{" "}
+            {siteConfig.name} {messages.site.footer}{" "}
             <a
               href={siteConfig.links.github}
               target="_blank"
               rel="noreferrer"
               className="font-medium underline underline-offset-4"
             >
-              GitHub
+              {messages.footer.github}
             </a>
-            . Free to use.
+            . {messages.site.footerFree}
           </p>
         </div>
         <ModeToggle />

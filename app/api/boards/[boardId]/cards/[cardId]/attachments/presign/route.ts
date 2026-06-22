@@ -4,6 +4,7 @@ import * as z from "zod"
 import { getBoardCardForAttachment } from "@/lib/board-attachments"
 import { getCurrentUserId, userCanEditBoard } from "@/lib/board-access"
 import { db } from "@/lib/db"
+import { msg } from "@/lib/messages/pt-br"
 import { buildStorageKey, createPresignedPutUrl } from "@/lib/storage"
 import {
   boardAttachmentPresignSchema,
@@ -77,8 +78,8 @@ export async function POST(req: Request, context: RouteContext) {
         {
           message:
             body.target === "inline"
-              ? "Inline image limit reached for this card."
-              : "Attachment limit reached for this target.",
+              ? msg.api.inlineImageLimit
+              : msg.api.attachmentLimit,
         },
         { status: 422 }
       )

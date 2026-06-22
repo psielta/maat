@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import { authOptions } from "@/lib/auth"
 import { getCurrentUser } from "@/lib/session"
 import { siteConfig } from "@/config/site"
+import { messages } from "@/lib/messages/pt-br"
 import { DashboardHeader } from "@/components/header"
 import { Icons } from "@/components/icons"
 import { DashboardHeaderActions } from "@/components/dashboard-header-actions"
@@ -11,8 +12,8 @@ import { DashboardShell } from "@/components/shell"
 import { UserNameForm } from "@/components/user-name-form"
 
 export const metadata = {
-  title: "Settings",
-  description: "Manage account and website settings.",
+  title: messages.settings.title,
+  description: messages.settings.description,
 }
 
 export default async function SettingsPage() {
@@ -41,8 +42,8 @@ export default async function SettingsPage() {
       <div className="flex-1 overflow-y-auto">
         <DashboardShell className="container max-w-3xl py-8">
           <DashboardHeader
-            heading="Settings"
-            text="Manage account and website settings."
+            heading={messages.settings.title}
+            text={messages.settings.description}
           />
           <div className="grid gap-10">
             <UserNameForm user={{ id: user.id, name: user.name || "" }} />

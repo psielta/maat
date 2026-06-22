@@ -9,6 +9,7 @@ import {
 import { checklistItemSelect } from "@/lib/checklist-select"
 import { serializeChecklistItem } from "@/lib/checklist-serialize"
 import { db } from "@/lib/db"
+
 import {
   checklistItemCreateSchema,
   MAX_ITEMS_PER_CHECKLIST,
@@ -66,7 +67,7 @@ export async function POST(req: Request, context: RouteContext) {
     if (itemCount >= MAX_ITEMS_PER_CHECKLIST) {
       return Response.json(
         {
-          message: `Checklists can have at most ${MAX_ITEMS_PER_CHECKLIST} items.`,
+          message: `As checklists podem ter no máximo ${MAX_ITEMS_PER_CHECKLIST} itens.`,
         },
         { status: 422 }
       )

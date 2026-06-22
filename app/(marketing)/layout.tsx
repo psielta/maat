@@ -1,6 +1,7 @@
 import Link from "next/link"
 
 import { marketingConfig } from "@/config/marketing"
+import { messages } from "@/lib/messages/pt-br"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 import { MainNav } from "@/components/main-nav"
@@ -28,7 +29,7 @@ export default async function MarketingLayout({
                 "px-4"
               )}
             >
-              Login
+              {messages.auth.login}
             </Link>
           </nav>
         </div>

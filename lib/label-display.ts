@@ -1,3 +1,5 @@
+import { messages } from "@/lib/messages/pt-br"
+
 export type BoardLabelModel = {
   id: string
   name: string
@@ -10,5 +12,5 @@ export function sortBoardLabels(labels: BoardLabelModel[]) {
 }
 
 export function getLabelDisplayName(label: BoardLabelModel) {
-  return label.name.trim() || "Unnamed label"
+  return label.name.trim() || messages.common.unnamedLabel
 }

@@ -3,6 +3,7 @@ import * as z from "zod"
 import { getCurrentUserId, userCanEditBoard } from "@/lib/board-access"
 import { recordBoardEvent } from "@/lib/board-events"
 import { db } from "@/lib/db"
+import { msg } from "@/lib/messages/pt-br"
 import { extractInlineImageIds } from "@/lib/lexical-inline-images"
 import {
   cleanupOrphanInlineImages,
@@ -150,7 +151,7 @@ export async function PATCH(req: Request, context: RouteContext) {
     if (body.isTemplate !== undefined) {
       if (body.isTemplate && existing.archivedAt) {
         return Response.json(
-          { message: "Archived cards cannot be marked as templates." },
+          { message: msg.api.archivedCardCannotBeTemplate },
           { status: 400 }
         )
       }
@@ -274,7 +275,7 @@ export async function DELETE(_req: Request, context: RouteContext) {
     if (!existing.archivedAt) {
       return Response.json(
         {
-          message: "Archive the card before deleting it permanently.",
+          message: msg.api.archiveCardBeforeDelete,
         },
         { status: 400 }
       )

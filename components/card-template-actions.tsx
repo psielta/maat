@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { toast } from "@/components/ui/use-toast"
+import { m } from "@/lib/i18n"
 
 type TemplateSummary = {
   id: string
@@ -45,6 +46,7 @@ export function CreateFromTemplateMenu({
   canEdit: boolean
   onCardCreated: (card: BoardCardModel) => void
 }) {
+  const msgs = m()
   const [templates, setTemplates] = React.useState<TemplateSummary[]>([])
   const [isLoading, setIsLoading] = React.useState(false)
 
@@ -74,15 +76,15 @@ export function CreateFromTemplateMenu({
 
     if (!response.ok) {
       toast({
-        title: "Something went wrong.",
-        description: "Card was not created from template. Please try again.",
+        title: msgs.common.errorTitle,
+        description: msgs.toast.templateCardNotCreated,
         variant: "destructive",
       })
       return
     }
 
     onCardCreated(await response.json())
-    toast({ description: "Card created from template." })
+    toast({ description: msgs.toast.templateCardCreated })
   }
 
   if (!canEdit) {
@@ -106,22 +108,24 @@ export function CreateFromTemplateMenu({
                 variant="ghost"
                 size="sm"
                 className="h-8 w-8 shrink-0 p-0 text-muted-foreground hover:text-foreground"
-                aria-label="Create from template"
+                aria-label={msgs.card.createFromTemplateAria}
               >
                 <LayoutTemplate className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
           </TooltipTrigger>
           <TooltipContent side="top">
-            Create a card from a template
+            {msgs.board.createFromTemplateTooltip}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
       <DropdownMenuContent align="start" className="w-72">
         {isLoading ? (
-          <DropdownMenuItem disabled>Loading templates…</DropdownMenuItem>
+          <DropdownMenuItem disabled>
+            {msgs.board.loadingTemplates}
+          </DropdownMenuItem>
         ) : templates.length === 0 ? (
-          <DropdownMenuItem disabled>No templates on this board</DropdownMenuItem>
+          <DropdownMenuItem disabled>{msgs.board.noTemplates}</DropdownMenuItem>
         ) : (
           templates.map((template) => (
             <DropdownMenuItem
@@ -157,6 +161,7 @@ export function CardTemplateActions({
   onCardUpdated: (card: BoardCardModel) => void
   onCardCreated: (card: BoardCardModel, listId: string) => void
 }) {
+  const msgs = m()
   const [isDialogOpen, setIsDialogOpen] = React.useState(false)
   const [targetListId, setTargetListId] = React.useState(card.listId)
   const [titleOverride, setTitleOverride] = React.useState(card.title)
@@ -172,8 +177,8 @@ export function CardTemplateActions({
 
     if (!response.ok) {
       toast({
-        title: "Something went wrong.",
-        description: "Template setting was not saved. Please try again.",
+        title: msgs.common.errorTitle,
+        description: msgs.toast.templateNotSaved,
         variant: "destructive",
       })
       return
@@ -190,8 +195,8 @@ export function CardTemplateActions({
     })
     toast({
       description: updated.isTemplate
-        ? "Card marked as template."
-        : "Template removed from card.",
+        ? msgs.toast.cardMarkedTemplate
+        : msgs.toast.templateRemoved,
     })
   }
 
@@ -212,8 +217,8 @@ export function CardTemplateActions({
 
     if (!response.ok) {
       toast({
-        title: "Something went wrong.",
-        description: "Card was not created from template. Please try again.",
+        title: msgs.common.errorTitle,
+        description: msgs.toast.templateCardNotCreated,
         variant: "destructive",
       })
       return
@@ -222,7 +227,7 @@ export function CardTemplateActions({
     const created = await response.json()
     onCardCreated(created, targetListId)
     setIsDialogOpen(false)
-    toast({ description: "Card created from template." })
+    toast({ description: msgs.toast.templateCardCreated })
   }
 
   if (!canEdit) {
@@ -233,26 +238,26 @@ export function CardTemplateActions({
     <div className="flex flex-wrap items-center gap-2">
       <Button type="button" size="sm" variant="outline" onClick={toggleTemplate}>
         <LayoutTemplate className="mr-2 h-4 w-4" />
-        {card.isTemplate ? "Remove template" : "Make template"}
+        {card.isTemplate ? msgs.card.removeTemplate : msgs.card.makeTemplate}
       </Button>
       {card.isTemplate ? (
         <Button type="button" size="sm" onClick={() => setIsDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          Create card from template
+          {msgs.card.createFromTemplate}
         </Button>
       ) : null}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create card from template</DialogTitle>
+            <DialogTitle>{msgs.card.createFromTemplateTitle}</DialogTitle>
             <DialogDescription>
-              Choose the destination list and optional title for the new card.
+              {msgs.card.createFromTemplateDesc}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3">
             <div className="space-y-1">
-              <label className="text-sm font-medium">List</label>
+              <label className="text-sm font-medium">{msgs.card.list}</label>
               <select
                 value={targetListId}
                 onChange={(event) => setTargetListId(event.target.value)}
@@ -266,17 +271,17 @@ export function CardTemplateActions({
               </select>
             </div>
             <div className="space-y-1">
-              <label className="text-sm font-medium">Title</label>
+              <label className="text-sm font-medium">{msgs.card.title}</label>
               <Input
                 value={titleOverride}
                 onChange={(event) => setTitleOverride(event.target.value)}
-                placeholder="Card title"
+                placeholder={msgs.card.title}
               />
             </div>
           </div>
           <DialogFooter>
             <Button type="button" onClick={() => void createFromTemplate()}>
-              Create card
+              {msgs.card.createCard}
             </Button>
           </DialogFooter>
         </DialogContent>

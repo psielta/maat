@@ -8,6 +8,7 @@ import {
 import { getCurrentUserId } from "@/lib/board-access"
 import { recordBoardEvent } from "@/lib/board-events"
 import { db } from "@/lib/db"
+import { msg } from "@/lib/messages/pt-br"
 import { headObject } from "@/lib/storage"
 
 const routeContextSchema = z.object({
@@ -60,7 +61,7 @@ export async function POST(req: Request, context: RouteContext) {
 
     if (objectSize <= 0 || objectSize > Number(attachment.sizeBytes)) {
       return Response.json(
-        { message: "Uploaded object size does not match the declared size." },
+        { message: msg.api.uploadedSizeMismatch },
         { status: 422 }
       )
     }

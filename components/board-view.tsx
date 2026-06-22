@@ -43,6 +43,7 @@ import {
   CARD_ID_PATTERN_TOKENS,
   previewCardDisplayId,
 } from "@/lib/card-id-pattern"
+import { m } from "@/lib/i18n"
 import { lexicalToPlainText } from "@/lib/lexical-text"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -167,6 +168,24 @@ export type BoardAccessModel = {
   canManage: boolean
 }
 
+const msg = m()
+
+const CARD_ID_TOKEN_DESCRIPTIONS: Record<string, string> = {
+  "{Number}":
+    "Número sequencial (reinicia diariamente quando um token de data é usado)",
+  "{Number:3}": "Número com preenchimento de 3 dígitos (001, 002, …)",
+  "{Date}": "Data no formato DDMMYYYY",
+  "{Day}": "Dia no formato DD",
+  "{Month}": "Mês no formato MM",
+  "{Year}": "Ano no formato YYYY",
+}
+
+function boardRoleLabel(role: "OWNER" | "EDITOR" | "VIEWER") {
+  if (role === "OWNER") return msg.common.owner
+  if (role === "EDITOR") return msg.common.editor
+  return msg.common.viewer
+}
+
 function initialsFor(member: BoardMemberModel) {
   const source = member.user.name || member.user.email || "?"
   return source.slice(0, 1).toUpperCase()
@@ -271,7 +290,7 @@ function CardSurface({
       <div className="p-3 pt-2">
       {card.isTemplate ? (
         <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
-          Template
+          {msg.card.template}
         </p>
       ) : null}
       {card.displayId && <CardDisplayId displayId={card.displayId} />}
@@ -348,7 +367,7 @@ function SortableCard({
       {hasUnreadMention && (
         <span
           className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-sm"
-          aria-label="You were mentioned in a comment"
+          aria-label={msg.card.mentioned}
         >
           <Bell className="h-3 w-3" />
         </span>
@@ -357,7 +376,7 @@ function SortableCard({
       <div className="p-3 pt-2">
         {card.isTemplate ? (
           <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
-            Template
+            {msg.card.template}
           </p>
         ) : null}
         {card.displayId && <CardDisplayId displayId={card.displayId} />}
@@ -421,7 +440,7 @@ function CardComposer({
           className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-2 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
         >
           <Icons.add className="h-4 w-4 shrink-0" />
-          Add a card
+          {msg.board.addCardTitle}
         </button>
         {trailingAction}
       </div>
@@ -449,18 +468,18 @@ function CardComposer({
           }
           if (event.key === "Escape") close()
         }}
-        placeholder="Enter a title for this card…"
+        placeholder={msg.board.addCardPlaceholder}
         className="min-h-[72px] resize-none border-none bg-card shadow-sm focus-visible:ring-2"
       />
       <div className="mt-2 flex items-center gap-2">
         <Button type="submit" size="sm" disabled={!value.trim()}>
-          Add card
+          {msg.board.addCard}
         </Button>
         <button
           type="button"
           onClick={close}
           className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
-          aria-label="Cancel"
+          aria-label={msg.common.cancel}
         >
           <X className="h-4 w-4" />
         </button>
@@ -589,7 +608,7 @@ function BoardListColumn({
               <button
                 type="button"
                 className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
-                aria-label="List actions"
+                aria-label={msg.board.listActions}
                 onPointerDown={(event) => event.stopPropagation()}
               >
                 <MoreHorizontal className="h-4 w-4" />
@@ -598,12 +617,12 @@ function BoardListColumn({
             <DropdownMenuContent align="end" className="w-40">
               <DropdownMenuItem onSelect={() => setIsEditingTitle(true)}>
                 <Pencil className="mr-2 h-4 w-4" />
-                Rename list
+                {msg.board.renameList}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => onArchiveList(list.id)}>
                 <Archive className="mr-2 h-4 w-4" />
-                Archive list
+                {msg.board.archiveList}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -627,7 +646,7 @@ function BoardListColumn({
           ))}
         </SortableContext>
         {list.cards.length === 0 && !canEdit && (
-          <p className="px-1 py-2 text-xs text-muted-foreground">No cards yet.</p>
+          <p className="px-1 py-2 text-xs text-muted-foreground">{msg.board.noCards}</p>
         )}
       </div>
 
@@ -709,7 +728,7 @@ function ListComposer({
         className="flex h-fit w-[280px] shrink-0 items-center gap-2 rounded-xl border border-dashed border-foreground/20 bg-foreground/5 px-3 py-3 text-sm font-medium text-foreground/80 backdrop-blur-sm transition-colors hover:bg-foreground/10"
       >
         <Icons.add className="h-4 w-4" />
-        Add another list
+        {msg.board.addList}
       </button>
     )
   }
@@ -731,18 +750,18 @@ function ListComposer({
         onKeyDown={(event) => {
           if (event.key === "Escape") close()
         }}
-        placeholder="Enter list title…"
+        placeholder={msg.board.addListPlaceholder}
         className="mb-2 bg-background"
       />
       <div className="flex items-center gap-2">
         <Button type="submit" size="sm" disabled={!value.trim()}>
-          Add list
+          Adicionar lista
         </Button>
         <button
           type="button"
           onClick={close}
           className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
-          aria-label="Cancel"
+          aria-label={msg.common.cancel}
         >
           <X className="h-4 w-4" />
         </button>
@@ -766,7 +785,7 @@ function MemberStack({
       type="button"
       onClick={onClick}
       className="flex items-center -space-x-2 rounded-full p-0.5 transition-transform hover:scale-105"
-      aria-label="Manage members"
+      aria-label={msg.board.manageMembers}
     >
       {visible.map((member) => (
         <Avatar key={member.id} className="h-8 w-8 border-2 border-background">
@@ -1134,8 +1153,8 @@ export function BoardView({
 
     if (!response.ok) {
       return toast({
-        title: "Something went wrong.",
-        description: "Your board was not saved. Please try again.",
+        title: msg.common.errorTitle,
+        description: `${msg.toast.boardNotSaved} ${msg.common.tryAgain}`,
         variant: "destructive",
       })
     }
@@ -1145,7 +1164,7 @@ export function BoardView({
 
   async function deleteBoard() {
     if (!access.canManage) return
-    if (!window.confirm("Delete this board and all of its cards?")) return
+    if (!window.confirm(msg.board.deleteBoardConfirm)) return
 
     const response = await fetch(`/api/boards/${board.id}`, {
       method: "DELETE",
@@ -1153,8 +1172,8 @@ export function BoardView({
 
     if (!response.ok) {
       return toast({
-        title: "Something went wrong.",
-        description: "Your board was not deleted. Please try again.",
+        title: msg.common.errorTitle,
+        description: `${msg.toast.boardNotDeleted} ${msg.common.tryAgain}`,
         variant: "destructive",
       })
     }
@@ -1177,9 +1196,9 @@ export function BoardView({
     if (!response.ok) {
       setLists(normalizeLists(board.lists))
       return toast({
-        title: "Something went wrong.",
+        title: msg.common.errorTitle,
         description:
-          "The new order was not saved. Please refresh and try again.",
+          "A nova ordem não foi salva. Atualize a página e tente novamente.",
         variant: "destructive",
       })
     }
@@ -1360,8 +1379,8 @@ export function BoardView({
 
     if (!response.ok) {
       return toast({
-        title: "Something went wrong.",
-        description: "Your list was not created. Please try again.",
+        title: msg.common.errorTitle,
+        description: `${msg.toast.listNotCreated} ${msg.common.tryAgain}`,
         variant: "destructive",
       })
     }
@@ -1403,8 +1422,8 @@ export function BoardView({
     if (!response.ok) {
       setLists(previousLists)
       return toast({
-        title: "Something went wrong.",
-        description: "Your list was not renamed. Please try again.",
+        title: msg.common.errorTitle,
+        description: `${msg.toast.listNotRenamed} ${msg.common.tryAgain}`,
         variant: "destructive",
       })
     }
@@ -1429,14 +1448,14 @@ export function BoardView({
     if (!response.ok) {
       setLists(previousLists)
       return toast({
-        title: "Something went wrong.",
-        description: "Your list was not archived. Please try again.",
+        title: msg.common.errorTitle,
+        description: `${msg.toast.listNotArchived} ${msg.common.tryAgain}`,
         variant: "destructive",
       })
     }
 
     router.refresh()
-    toast({ description: "List archived." })
+    toast({ description: msg.toast.listArchived })
   }
 
   async function createCard(listId: string) {
@@ -1459,8 +1478,8 @@ export function BoardView({
 
     if (!response.ok) {
       return toast({
-        title: "Something went wrong.",
-        description: "Your card was not created. Please try again.",
+        title: msg.common.errorTitle,
+        description: `${msg.toast.cardNotCreated} ${msg.common.tryAgain}`,
         variant: "destructive",
       })
     }
@@ -1512,8 +1531,8 @@ export function BoardView({
 
     if (!response.ok) {
       return toast({
-        title: "Something went wrong.",
-        description: "Your card was not saved. Please try again.",
+        title: msg.common.errorTitle,
+        description: `${msg.toast.cardNotSaved} ${msg.common.tryAgain}`,
         variant: "destructive",
       })
     }
@@ -1537,7 +1556,7 @@ export function BoardView({
     )
     setSelectedCard(card)
     router.refresh()
-    return toast({ description: "Card saved." })
+    return toast({ description: msg.toast.cardSaved })
   }
 
   async function archiveSelectedCard() {
@@ -1559,8 +1578,8 @@ export function BoardView({
 
     if (!response.ok) {
       return toast({
-        title: "Something went wrong.",
-        description: "Your card was not archived. Please try again.",
+        title: msg.common.errorTitle,
+        description: `${msg.toast.cardNotArchived} ${msg.common.tryAgain}`,
         variant: "destructive",
       })
     }
@@ -1573,7 +1592,7 @@ export function BoardView({
     )
     setSelectedCard(null)
     router.refresh()
-    toast({ description: "Card archived." })
+    toast({ description: msg.toast.cardArchived })
   }
 
   async function shareBoard(event: React.FormEvent<HTMLFormElement>) {
@@ -1594,11 +1613,11 @@ export function BoardView({
 
     if (!response.ok) {
       return toast({
-        title: "Something went wrong.",
+        title: msg.common.errorTitle,
         description:
           response.status === 404
-            ? "That user does not exist in this system."
-            : "Board access was not updated. Please try again.",
+            ? "Esse usuário não existe neste sistema."
+            : `O acesso ao board não foi atualizado. ${msg.common.tryAgain}`,
         variant: "destructive",
       })
     }
@@ -1628,8 +1647,8 @@ export function BoardView({
 
     if (!response.ok) {
       return toast({
-        title: "Something went wrong.",
-        description: "Member permissions were not updated. Please try again.",
+        title: msg.common.errorTitle,
+        description: `${msg.toast.memberNotUpdated} ${msg.common.tryAgain}`,
         variant: "destructive",
       })
     }
@@ -1653,8 +1672,8 @@ export function BoardView({
 
     if (!response.ok) {
       return toast({
-        title: "Something went wrong.",
-        description: "Member access was not removed. Please try again.",
+        title: msg.common.errorTitle,
+        description: `${msg.toast.memberNotRemoved} ${msg.common.tryAgain}`,
         variant: "destructive",
       })
     }
@@ -1671,7 +1690,7 @@ export function BoardView({
           <Link
             href="/dashboard"
             className="flex shrink-0 items-center gap-1.5 font-bold"
-            aria-label="Maat home"
+            aria-label={msg.board.homeAria}
           >
             <Icons.logo className="h-5 w-5 text-primary" />
             <span className="hidden text-base md:inline">Maat</span>
@@ -1714,7 +1733,7 @@ export function BoardView({
             )}
 
             <span className="hidden shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-primary sm:inline-block">
-              {access.role.toLowerCase()}
+              {boardRoleLabel(access.role)}
             </span>
             <span className="hidden shrink-0 items-center gap-1.5 rounded-full bg-white/60 px-2 py-0.5 text-[11px] font-medium text-muted-foreground dark:bg-white/10 md:inline-flex">
               <span
@@ -1725,7 +1744,7 @@ export function BoardView({
                     : "bg-muted-foreground/50"
                 )}
               />
-              {isRealtimeConnected ? "Live" : "Offline"}
+              {isRealtimeConnected ? msg.common.live : msg.common.offline}
             </span>
             {isSavingBoard && (
               <Icons.spinner className="h-3.5 w-3.5 shrink-0 animate-spin text-muted-foreground" />
@@ -1745,7 +1764,7 @@ export function BoardView({
                 )}
               >
                 <Kanban className="h-3.5 w-3.5" />
-                Board
+                {msg.board.board}
               </button>
               <button
                 type="button"
@@ -1758,7 +1777,7 @@ export function BoardView({
                 )}
               >
                 <CalendarDays className="h-3.5 w-3.5" />
-                Calendar
+                {msg.board.calendar}
               </button>
             </div>
             <MemberStack members={members} onClick={() => setIsShareOpen(true)} />
@@ -1770,7 +1789,7 @@ export function BoardView({
                 className="hidden gap-1.5 sm:inline-flex"
               >
                 <UserPlus className="h-4 w-4" />
-                Share
+                {msg.board.share}
               </Button>
             )}
             {(access.canEdit || access.canManage) && (
@@ -1779,7 +1798,7 @@ export function BoardView({
                   <button
                     type="button"
                     className="flex h-9 w-9 items-center justify-center rounded-md bg-white/50 text-foreground transition-colors hover:bg-white/80 dark:bg-white/5 dark:hover:bg-white/10"
-                    aria-label="Board actions"
+                    aria-label={msg.board.boardActions}
                   >
                     <MoreHorizontal className="h-4 w-4" />
                   </button>
@@ -1788,31 +1807,31 @@ export function BoardView({
                   {access.canRead && (
                     <DropdownMenuItem onSelect={() => setIsArchivedOpen(true)}>
                       <Archive className="mr-2 h-4 w-4" />
-                      Archived items
+                      {msg.board.archivedItems}
                     </DropdownMenuItem>
                   )}
                   {access.canEdit && (
                     <DropdownMenuItem onSelect={() => setIsDetailsOpen(true)}>
                       <Pencil className="mr-2 h-4 w-4" />
-                      Edit details
+                      Editar detalhes
                     </DropdownMenuItem>
                   )}
                   {access.canManage && (
                     <DropdownMenuItem onSelect={() => setIsCustomFieldsOpen(true)}>
                       <ListChecks className="mr-2 h-4 w-4" />
-                      Custom fields
+                      {msg.board.customFields}
                     </DropdownMenuItem>
                   )}
                   {access.canManage && (
                     <DropdownMenuItem onSelect={() => setIsLabelsOpen(true)}>
                       <Tags className="mr-2 h-4 w-4" />
-                      Labels
+                      {msg.board.labels}
                     </DropdownMenuItem>
                   )}
                   {access.canManage && (
                     <DropdownMenuItem onSelect={() => setIsShareOpen(true)}>
                       <UserPlus className="mr-2 h-4 w-4" />
-                      Manage members
+                      {msg.board.manageMembers}
                     </DropdownMenuItem>
                   )}
                   {access.canManage && (
@@ -1823,7 +1842,7 @@ export function BoardView({
                         onSelect={() => void deleteBoard()}
                       >
                         <Icons.trash className="mr-2 h-4 w-4" />
-                        Delete board
+                        {msg.board.deleteBoard}
                       </DropdownMenuItem>
                     </>
                   )}
@@ -1889,7 +1908,7 @@ export function BoardView({
 
               {lists.length === 0 && !access.canEdit && (
                 <p className="px-2 py-8 text-sm text-muted-foreground">
-                  This board has no lists yet.
+                  {msg.board.noLists}
                 </p>
               )}
             </div>
@@ -1913,9 +1932,9 @@ export function BoardView({
       <Dialog open={isShareOpen} onOpenChange={setIsShareOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Share board</DialogTitle>
+            <DialogTitle>{msg.board.shareBoard}</DialogTitle>
             <DialogDescription>
-              Invite people by email and manage their access.
+              Convide pessoas por e-mail e gerencie o acesso delas.
             </DialogDescription>
           </DialogHeader>
 
@@ -1926,7 +1945,7 @@ export function BoardView({
                   type="email"
                   value={memberEmail}
                   onChange={(event) => setMemberEmail(event.target.value)}
-                  placeholder="user@example.com"
+                  placeholder={msg.auth.emailPlaceholder}
                 />
                 <select
                   value={memberRole}
@@ -1935,11 +1954,11 @@ export function BoardView({
                   }
                   className="h-10 rounded-md border bg-background px-3 text-sm"
                 >
-                  <option value="EDITOR">Editor</option>
-                  <option value="VIEWER">Viewer</option>
+                  <option value="EDITOR">{msg.common.editor}</option>
+                  <option value="VIEWER">{msg.common.viewer}</option>
                 </select>
                 <Button type="submit" disabled={!memberEmail.trim()}>
-                  Invite
+                  Convidar
                 </Button>
               </div>
             </form>
@@ -1983,19 +2002,19 @@ export function BoardView({
                     }
                     className="h-8 rounded-md border bg-background px-2 text-xs"
                   >
-                    <option value="EDITOR">Editor</option>
-                    <option value="VIEWER">Viewer</option>
+                    <option value="EDITOR">{msg.common.editor}</option>
+                    <option value="VIEWER">{msg.common.viewer}</option>
                   </select>
                 ) : (
                   <span className="rounded-full bg-muted px-2 py-1 text-[11px] font-medium uppercase text-muted-foreground">
-                    {member.role.toLowerCase()}
+                    {boardRoleLabel(member.role)}
                   </span>
                 )}
                 {access.canManage && member.role !== "OWNER" && (
                   <button
                     type="button"
                     className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-destructive"
-                    aria-label="Remove member"
+                    aria-label={msg.board.removeMember}
                     onClick={() => void removeMember(member.id)}
                   >
                     <Icons.close className="h-4 w-4" />
@@ -2034,37 +2053,34 @@ export function BoardView({
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Board details</DialogTitle>
-            <DialogDescription>
-              Update the board name, description and card ID pattern.
-            </DialogDescription>
+            <DialogTitle>{msg.board.boardDetails}</DialogTitle>
+            <DialogDescription>{msg.board.boardDetailsDesc}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-3">
             <Input
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              placeholder="Board name"
+              placeholder={msg.board.boardName}
               disabled={!access.canEdit}
             />
             <Textarea
               value={description}
               onChange={(event) => setDescription(event.target.value)}
-              placeholder="Description"
+              placeholder={msg.board.description}
               className="min-h-[120px]"
               disabled={!access.canEdit}
             />
             <div className="space-y-2 rounded-lg border border-dashed p-3">
               <div>
-                <p className="text-sm font-medium">Card ID pattern</p>
+                <p className="text-sm font-medium">{msg.board.cardIdPattern}</p>
                 <p className="text-xs text-muted-foreground">
-                  New cards receive an auto-generated ID from this pattern.
-                  Leave empty to disable.
+                  {msg.board.cardIdPatternHelp}
                 </p>
               </div>
               <Input
                 value={cardIdPattern}
                 onChange={(event) => setCardIdPattern(event.target.value)}
-                placeholder="BP{Number:3}{Date}"
+                placeholder={msg.board.cardIdPatternPlaceholder}
                 disabled={!access.canEdit}
                 className="font-mono text-sm"
               />
@@ -2073,13 +2089,13 @@ export function BoardView({
                   <p key={item.token}>
                     <span className="font-mono text-foreground">{item.token}</span>
                     {" — "}
-                    {item.description}
+                    {CARD_ID_TOKEN_DESCRIPTIONS[item.token] ?? item.description}
                   </p>
                 ))}
               </div>
               {cardIdPatternPreview && (
                 <p className="text-xs text-muted-foreground">
-                  Preview:{" "}
+                  {msg.board.preview}:{" "}
                   <span className="font-mono font-medium text-foreground">
                     {cardIdPatternPreview}
                   </span>
@@ -2096,7 +2112,7 @@ export function BoardView({
                   setIsDetailsOpen(false)
                 }}
               >
-                Save details
+                {msg.board.saveDetails}
               </Button>
             </DialogFooter>
           )}
@@ -2117,10 +2133,8 @@ export function BoardView({
             onEscapeKeyDown={preventCardDialogDismissOnLightbox}
           >
           <DialogHeader className="sr-only">
-            <DialogTitle>Card details</DialogTitle>
-            <DialogDescription>
-              Edit the card title, description and comments.
-            </DialogDescription>
+            <DialogTitle>{msg.card.details}</DialogTitle>
+            <DialogDescription>{msg.card.detailsDesc}</DialogDescription>
           </DialogHeader>
           {selectedCard && (
             <>
@@ -2151,7 +2165,7 @@ export function BoardView({
                         void saveSelectedCard()
                       }
                     }}
-                    placeholder="Card title"
+                    placeholder={msg.card.title}
                     disabled={!access.canEdit}
                     className="h-auto border-none px-0 text-xl font-semibold shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:cursor-default disabled:opacity-100"
                   />
@@ -2186,7 +2200,7 @@ export function BoardView({
                   <section>
                     <div className="mb-2 flex items-center gap-2">
                       <AlignLeft className="h-4 w-4 text-muted-foreground" />
-                      <h3 className="text-sm font-semibold">Description</h3>
+                      <h3 className="text-sm font-semibold">{msg.card.description}</h3>
                     </div>
                     <div className="pl-6">
                       <RichTextEditor
@@ -2207,7 +2221,7 @@ export function BoardView({
                             size="sm"
                             onClick={saveSelectedCard}
                           >
-                            Save
+                            {msg.common.save}
                           </Button>
                           <Button
                             type="button"
@@ -2216,7 +2230,7 @@ export function BoardView({
                             onClick={archiveSelectedCard}
                           >
                             <Archive className="mr-2 h-4 w-4" />
-                            Archive card
+                            {msg.card.archiveCard}
                           </Button>
                         </div>
                       )}
@@ -2300,7 +2314,7 @@ export function BoardView({
                   <div className="flex items-center gap-2">
                     <MessageSquare className="h-4 w-4 text-muted-foreground" />
                     <h3 className="text-sm font-semibold">
-                      Comments and activity
+                      {msg.card.commentsActivity}
                     </h3>
                   </div>
                   <CardComments

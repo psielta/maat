@@ -5,6 +5,7 @@ import { recordBoardEvent } from "@/lib/board-events"
 import { customFieldSelect } from "@/lib/custom-field-select"
 import { serializeCustomField } from "@/lib/custom-field-serialize"
 import { db } from "@/lib/db"
+import { msg } from "@/lib/messages/pt-br"
 import { customFieldPatchSchema } from "@/lib/validations/board"
 
 const routeContextSchema = z.object({
@@ -59,7 +60,7 @@ export async function PATCH(req: Request, context: RouteContext) {
 
     if (body.options !== undefined && existing.type !== "DROPDOWN") {
       return Response.json(
-        { message: "Options are only supported for dropdown fields." },
+        { message: msg.api.optionsOnlyDropdown },
         { status: 422 }
       )
     }

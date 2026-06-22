@@ -16,6 +16,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { toast } from "@/components/ui/use-toast"
+import { m } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 
 type DateDraft = {
@@ -66,6 +67,7 @@ export function CardDates({
   canEdit: boolean
   onDatesChange: (dates: CardDatesModel) => void
 }) {
+  const msgs = m()
   const [draft, setDraft] = React.useState(() => buildDraft(dates))
   const [isOpen, setIsOpen] = React.useState(false)
   const saveTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -94,8 +96,8 @@ export function CardDates({
 
     if (!response.ok) {
       toast({
-        title: "Something went wrong.",
-        description: "Card dates were not saved. Please try again.",
+        title: msgs.common.errorTitle,
+        description: msgs.toast.cardDatesNotSaved,
         variant: "destructive",
       })
       setDraft(buildDraft(dates))
@@ -154,7 +156,7 @@ export function CardDates({
     <section className="space-y-3">
       <div className="flex items-center gap-2">
         <CalendarClock className="h-4 w-4 text-muted-foreground" />
-        <h3 className="text-sm font-semibold">Dates</h3>
+        <h3 className="text-sm font-semibold">{msgs.card.dates}</h3>
       </div>
 
       <div className="pl-6">
@@ -171,14 +173,14 @@ export function CardDates({
               )}
             >
               <CalendarClock className="h-3.5 w-3.5" />
-              {hasAnyDate ? "Edit dates" : "Add dates"}
+              {hasAnyDate ? msgs.card.editDates : msgs.card.addDates}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
             <div className="space-y-3 p-3">
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">
-                  Start date
+                  {msgs.card.startDate}
                 </Label>
                 <Calendar
                   mode="single"
@@ -199,13 +201,15 @@ export function CardDates({
                     onClick={() => updateDraft({ startDate: "" })}
                   >
                     <X className="mr-1 h-3 w-3" />
-                    Remove start date
+                    {msgs.card.removeStartDate}
                   </Button>
                 )}
               </div>
 
               <div className="space-y-2 border-t pt-3">
-                <Label className="text-xs text-muted-foreground">Due date</Label>
+                <Label className="text-xs text-muted-foreground">
+                  {msgs.card.dueDate}
+                </Label>
                 <Calendar
                   mode="single"
                   selected={dueSelected}
@@ -222,7 +226,7 @@ export function CardDates({
                       htmlFor={`due-time-${cardId}`}
                       className="text-xs text-muted-foreground"
                     >
-                      Time
+                      {msgs.card.time}
                     </Label>
                     <Input
                       id={`due-time-${cardId}`}
@@ -249,7 +253,7 @@ export function CardDates({
                       className="flex items-center gap-1 text-sm font-normal"
                     >
                       <Check className="h-3.5 w-3.5" />
-                      Mark complete
+                      {msgs.card.markComplete}
                     </Label>
                   </div>
                 )}
@@ -264,7 +268,7 @@ export function CardDates({
                     }
                   >
                     <X className="mr-1 h-3 w-3" />
-                    Remove due date
+                    {msgs.card.removeDueDate}
                   </Button>
                 )}
               </div>
@@ -277,7 +281,7 @@ export function CardDates({
                   className="h-7 w-full text-xs text-destructive hover:text-destructive"
                   onClick={clearDates}
                 >
-                  Remove all dates
+                  {msgs.card.removeAllDates}
                 </Button>
               )}
             </div>
@@ -287,13 +291,23 @@ export function CardDates({
         {hasAnyDate && (
           <div className="mt-2 space-y-1 text-xs text-muted-foreground">
             {draft.startDate && (
-              <p>Starts {format(parseISO(draft.startDate), "MMM d, yyyy")}</p>
+              <p>
+                {msgs.card.startsOn.replace(
+                  "{date}",
+                  format(parseISO(draft.startDate), "MMM d, yyyy")
+                )}
+              </p>
             )}
             {draft.dueDate && (
               <p>
-                Due {format(parseISO(draft.dueDate), "MMM d, yyyy")}
-                {draft.dueTime ? ` at ${draft.dueTime}` : ""}
-                {draft.dueComplete ? " (complete)" : ""}
+                {msgs.card.dueOn.replace(
+                  "{date}",
+                  format(parseISO(draft.dueDate), "MMM d, yyyy")
+                )}
+                {draft.dueTime
+                  ? msgs.common.atTime.replace("{time}", draft.dueTime)
+                  : ""}
+                {draft.dueComplete ? msgs.common.completeStatus : ""}
               </p>
             )}
           </div>

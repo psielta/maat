@@ -5,8 +5,11 @@ import { format, parseISO } from "date-fns"
 import { Trash2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 
+import { ptBR } from "date-fns/locale"
+
 import type { ArchivedCardModel } from "@/lib/card-archive"
 import type { ArchivedListModel } from "@/lib/list-archive"
+import { m } from "@/lib/i18n"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -26,6 +29,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+
+const msg = m()
 
 type DeleteTarget =
   | { type: "card"; id: string }
@@ -73,8 +78,8 @@ export function BoardArchivedItems({
 
       if (!cardsResponse.ok || !listsResponse.ok) {
         toast({
-          title: "Something went wrong.",
-          description: "Archived items could not be loaded. Please try again.",
+          title: msg.common.errorTitle,
+          description: `Não foi possível carregar os itens arquivados. ${msg.common.tryAgain}`,
           variant: "destructive",
         })
         return
@@ -106,8 +111,8 @@ export function BoardArchivedItems({
 
     if (!response.ok) {
       toast({
-        title: "Something went wrong.",
-        description: "The card was not restored. Please try again.",
+        title: msg.common.errorTitle,
+        description: `O card não foi restaurado. ${msg.common.tryAgain}`,
         variant: "destructive",
       })
       return
@@ -115,7 +120,7 @@ export function BoardArchivedItems({
 
     setCards((current) => current.filter((card) => card.id !== cardId))
     router.refresh()
-    toast({ description: "Card sent to board." })
+    toast({ description: msg.toast.cardRestored })
   }
 
   async function restoreList(listId: string) {
@@ -133,8 +138,8 @@ export function BoardArchivedItems({
 
     if (!response.ok) {
       toast({
-        title: "Something went wrong.",
-        description: "The list was not restored. Please try again.",
+        title: msg.common.errorTitle,
+        description: `A lista não foi restaurada. ${msg.common.tryAgain}`,
         variant: "destructive",
       })
       return
@@ -142,7 +147,7 @@ export function BoardArchivedItems({
 
     setLists((current) => current.filter((list) => list.id !== listId))
     router.refresh()
-    toast({ description: "List sent to board." })
+    toast({ description: msg.toast.listRestored })
   }
 
   async function deleteCard(cardId: string) {
@@ -157,8 +162,8 @@ export function BoardArchivedItems({
 
     if (!response.ok) {
       toast({
-        title: "Something went wrong.",
-        description: "The card was not deleted. Please try again.",
+        title: msg.common.errorTitle,
+        description: `O card não foi excluído. ${msg.common.tryAgain}`,
         variant: "destructive",
       })
       return
@@ -166,7 +171,7 @@ export function BoardArchivedItems({
 
     setCards((current) => current.filter((card) => card.id !== cardId))
     router.refresh()
-    toast({ description: "Card deleted permanently." })
+    toast({ description: msg.toast.cardDeletedPermanently })
   }
 
   async function deleteList(listId: string) {
@@ -181,8 +186,8 @@ export function BoardArchivedItems({
 
     if (!response.ok) {
       toast({
-        title: "Something went wrong.",
-        description: "The list was not deleted. Please try again.",
+        title: msg.common.errorTitle,
+        description: `A lista não foi excluída. ${msg.common.tryAgain}`,
         variant: "destructive",
       })
       return
@@ -190,7 +195,7 @@ export function BoardArchivedItems({
 
     setLists((current) => current.filter((list) => list.id !== listId))
     router.refresh()
-    toast({ description: "List deleted permanently." })
+    toast({ description: msg.toast.listDeletedPermanently })
   }
 
   const isEmpty = !isLoading && cards.length === 0 && lists.length === 0
@@ -200,24 +205,21 @@ export function BoardArchivedItems({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Archived items</DialogTitle>
-            <DialogDescription>
-              Cards and lists removed from the board stay here until restored or
-              deleted permanently.
-            </DialogDescription>
+            <DialogTitle>{msg.board.archivedItems}</DialogTitle>
+            <DialogDescription>{msg.board.archivedDesc}</DialogDescription>
           </DialogHeader>
 
           <div className="max-h-[420px] space-y-4 overflow-y-auto">
             {isLoading ? (
-              <p className="text-sm text-muted-foreground">Loading...</p>
+              <p className="text-sm text-muted-foreground">{msg.common.loading}</p>
             ) : isEmpty ? (
-              <p className="text-sm text-muted-foreground">No archived items.</p>
+              <p className="text-sm text-muted-foreground">{msg.board.archivedEmpty}</p>
             ) : (
               <>
                 {lists.length > 0 && (
                   <section className="space-y-2">
                     <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Lists
+                      {msg.board.archivedLists}
                     </h3>
                     {lists.map((list) => (
                       <div
@@ -229,11 +231,17 @@ export function BoardArchivedItems({
                             {list.title}
                           </p>
                           <p className="mt-1 text-xs text-muted-foreground">
-                            {list.cardCount}{" "}
-                            {list.cardCount === 1 ? "card" : "cards"}
+                            {list.cardCount === 1
+                              ? msg.board.cardCountOne
+                              : msg.board.cardCountMany.replace(
+                                  "{count}",
+                                  String(list.cardCount)
+                                )}
                             {" · "}
-                            Archived{" "}
-                            {format(parseISO(list.archivedAt), "MMM d, yyyy")}
+                            {msg.board.archivedListOn}{" "}
+                            {format(parseISO(list.archivedAt), "d MMM yyyy", {
+                              locale: ptBR,
+                            })}
                           </p>
                         </div>
                         {canEdit && (
@@ -246,7 +254,7 @@ export function BoardArchivedItems({
                               disabled={busyId === list.id}
                               onClick={() => void restoreList(list.id)}
                             >
-                              Send to board
+                              {msg.board.restoreToBoard}
                             </Button>
                             <Button
                               type="button"
@@ -257,7 +265,7 @@ export function BoardArchivedItems({
                               onClick={() =>
                                 setDeleteTarget({ type: "list", id: list.id })
                               }
-                              aria-label="Delete list permanently"
+                              aria-label={msg.board.deleteListPermanently}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -271,7 +279,7 @@ export function BoardArchivedItems({
                 {cards.length > 0 && (
                   <section className="space-y-2">
                     <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Cards
+                      {msg.board.archivedCards}
                     </h3>
                     {cards.map((card) => (
                       <div
@@ -285,8 +293,10 @@ export function BoardArchivedItems({
                           <p className="mt-1 text-xs text-muted-foreground">
                             {card.listTitle}
                             {" · "}
-                            Archived{" "}
-                            {format(parseISO(card.archivedAt), "MMM d, yyyy")}
+                            {msg.board.archivedOn}{" "}
+                            {format(parseISO(card.archivedAt), "d MMM yyyy", {
+                              locale: ptBR,
+                            })}
                           </p>
                           {card.displayId && (
                             <p className="mt-1 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
@@ -304,7 +314,7 @@ export function BoardArchivedItems({
                               disabled={busyId === card.id}
                               onClick={() => void restoreCard(card.id)}
                             >
-                              Send to board
+                              {msg.board.restoreToBoard}
                             </Button>
                             <Button
                               type="button"
@@ -315,7 +325,7 @@ export function BoardArchivedItems({
                               onClick={() =>
                                 setDeleteTarget({ type: "card", id: card.id })
                               }
-                              aria-label="Delete card permanently"
+                              aria-label={msg.board.deleteCardPermanently}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -343,17 +353,17 @@ export function BoardArchivedItems({
           <AlertDialogHeader>
             <AlertDialogTitle>
               {deleteTarget?.type === "list"
-                ? "Delete list permanently?"
-                : "Delete card permanently?"}
+                ? msg.board.confirmDeleteListTitle
+                : msg.board.confirmDeleteCardTitle}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {deleteTarget?.type === "list"
-                ? "This action cannot be undone. The list and all of its cards will be removed."
-                : "This action cannot be undone. The card and all of its comments, attachments, and checklists will be removed."}
+                ? msg.board.confirmDeleteListDesc
+                : msg.board.confirmDeleteCardDesc}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{msg.common.cancel}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
@@ -368,7 +378,7 @@ export function BoardArchivedItems({
                 }
               }}
             >
-              Delete permanently
+              {msg.board.deletePermanently}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

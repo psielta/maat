@@ -3,6 +3,7 @@ import * as z from "zod"
 import { getCurrentUserId, userCanEditBoard } from "@/lib/board-access"
 import { recordBoardEvent } from "@/lib/board-events"
 import { db } from "@/lib/db"
+import { msg } from "@/lib/messages/pt-br"
 import { boardListPatchSchema } from "@/lib/validations/board"
 
 const routeContextSchema = z.object({
@@ -216,7 +217,7 @@ export async function DELETE(_req: Request, context: RouteContext) {
     if (!existing.archivedAt) {
       return Response.json(
         {
-          message: "Archive the list before deleting it permanently.",
+          message: msg.api.archiveListBeforeDelete,
         },
         { status: 400 }
       )

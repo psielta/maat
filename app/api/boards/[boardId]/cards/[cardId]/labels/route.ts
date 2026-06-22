@@ -5,6 +5,7 @@ import { recordBoardEvent } from "@/lib/board-events"
 import { cardLabelSelect } from "@/lib/label-select"
 import { serializeCardLabels } from "@/lib/label-serialize"
 import { db } from "@/lib/db"
+import { msg } from "@/lib/messages/pt-br"
 import { cardLabelsPatchSchema } from "@/lib/validations/board"
 
 const routeContextSchema = z.object({
@@ -72,7 +73,7 @@ export async function PATCH(req: Request, context: RouteContext) {
 
       if (validLabels.length !== uniqueLabelIds.length) {
         return Response.json(
-          { message: "One or more labels do not belong to this board." },
+          { message: msg.api.labelsNotOnBoard },
           { status: 422 }
         )
       }

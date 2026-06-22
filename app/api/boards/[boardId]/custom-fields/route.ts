@@ -87,7 +87,7 @@ export async function POST(req: Request, context: RouteContext) {
     if (fieldCount >= MAX_CUSTOM_FIELDS_PER_BOARD) {
       return Response.json(
         {
-          message: `Boards can have at most ${MAX_CUSTOM_FIELDS_PER_BOARD} custom fields.`,
+          message: `Os boards podem ter no máximo ${MAX_CUSTOM_FIELDS_PER_BOARD} campos personalizados.`,
         },
         { status: 422 }
       )

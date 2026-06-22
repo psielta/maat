@@ -8,6 +8,7 @@ import type { CardLinkModel } from "@/lib/card-link-display"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "@/components/ui/use-toast"
+import { m } from "@/lib/i18n"
 
 export function CardLinks({
   boardId,
@@ -26,6 +27,7 @@ export function CardLinks({
   onOpenCard: (card: BoardCardModel) => void
   onLinkedCountDelta: (cardId: string, delta: number) => void
 }) {
+  const msgs = m()
   const [links, setLinks] = React.useState<CardLinkModel[]>([])
   const [query, setQuery] = React.useState("")
   const [isLoading, setIsLoading] = React.useState(true)
@@ -103,9 +105,8 @@ export function CardLinks({
     if (!response.ok) {
       const payload = await response.json().catch(() => null)
       toast({
-        title: "Something went wrong.",
-        description:
-          payload?.message ?? "Card link was not created. Please try again.",
+        title: msgs.common.errorTitle,
+        description: payload?.message ?? msgs.toast.cardLinksNotCreated,
         variant: "destructive",
       })
       return
@@ -135,8 +136,8 @@ export function CardLinks({
       setLinks(previous)
       onLinkedCountDelta(cardId, 1)
       toast({
-        title: "Something went wrong.",
-        description: "Card link was not removed. Please try again.",
+        title: msgs.common.errorTitle,
+        description: msgs.toast.cardLinksNotRemoved,
         variant: "destructive",
       })
       return
@@ -149,8 +150,8 @@ export function CardLinks({
     const card = boardCards.find((item) => item.id === link.card.id)
     if (!card) {
       toast({
-        title: "Card unavailable",
-        description: "Refresh the board to open this linked card.",
+        title: msgs.toast.cardUnavailable,
+        description: msgs.toast.cardUnavailableDesc,
       })
       return
     }
@@ -162,16 +163,16 @@ export function CardLinks({
     <section>
       <div className="mb-2 flex items-center gap-2">
         <Link2 className="h-4 w-4 text-muted-foreground" />
-        <h3 className="text-sm font-semibold">Linked cards</h3>
+        <h3 className="text-sm font-semibold">{msgs.card.linkedCards}</h3>
       </div>
 
       <div className="space-y-3 pl-6">
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading links…</p>
-        ) : links.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No linked cards yet.
+            {msgs.card.loadingLinks}
           </p>
+        ) : links.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{msgs.card.noLinks}</p>
         ) : (
           <ul className="space-y-2">
             {links.map((link) => (
@@ -199,7 +200,10 @@ export function CardLinks({
                     variant="ghost"
                     className="h-8 w-8 shrink-0 p-0"
                     onClick={() => void removeLink(link.id, link.card.id)}
-                    aria-label={`Unlink ${link.card.title}`}
+                    aria-label={msgs.card.unlinkCard.replace(
+                      "{title}",
+                      link.card.title
+                    )}
                   >
                     <Unlink className="h-4 w-4" />
                   </Button>
@@ -216,7 +220,7 @@ export function CardLinks({
               <Input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search cards to link…"
+                placeholder={msgs.card.searchLinks}
                 className="pl-8"
               />
             </div>
@@ -232,7 +236,7 @@ export function CardLinks({
                       <span className="text-sm font-medium">{card.title}</span>
                       <span className="text-xs text-muted-foreground">
                         {card.displayId ? `${card.displayId} · ` : ""}
-                        {listTitlesById[card.listId] ?? "List"}
+                        {listTitlesById[card.listId] ?? msgs.card.listFallback}
                       </span>
                     </button>
                   </li>

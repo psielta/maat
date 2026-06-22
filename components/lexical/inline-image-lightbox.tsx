@@ -38,7 +38,7 @@ export function InlineImageLightboxOverlay({
       className="absolute inset-0 z-[200] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
-      aria-label="Expanded image"
+      aria-label="Imagem ampliada"
       onClick={(event) => {
         if (event.target !== event.currentTarget) return
         handleClose(event)
@@ -46,7 +46,7 @@ export function InlineImageLightboxOverlay({
     >
       <button
         type="button"
-        aria-label="Close"
+        aria-label="Fechar"
         onClick={handleClose}
         className="absolute right-4 top-4 z-[201] flex h-9 w-9 items-center justify-center rounded-full bg-background/90 text-foreground shadow-md transition-opacity hover:opacity-100"
       >

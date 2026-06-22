@@ -15,6 +15,7 @@ import {
   LABEL_COLOR_PRESETS,
   LABEL_DEFAULT_COLOR,
 } from "@/lib/label-colors"
+import { m } from "@/lib/i18n"
 import type { BoardLabelModel } from "@/lib/label-display"
 import { getLabelDisplayName } from "@/lib/label-display"
 import { Button } from "@/components/ui/button"
@@ -40,6 +41,19 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { cn } from "@/lib/utils"
+
+const msg = m()
+
+const COLOR_PRESET_LABELS: Record<string, string> = {
+  Blue: "Azul",
+  Green: "Verde",
+  Yellow: "Amarelo",
+  Orange: "Laranja",
+  Red: "Vermelho",
+  Purple: "Roxo",
+  Pink: "Rosa",
+  Gray: "Cinza",
+}
 
 export function BoardLabelsManager({
   boardId,
@@ -88,8 +102,8 @@ export function BoardLabelsManager({
 
     if (!response.ok) {
       toast({
-        title: "Something went wrong.",
-        description: "The label was not created. Please try again.",
+        title: msg.common.errorTitle,
+        description: `A etiqueta não foi criada. ${msg.common.tryAgain}`,
         variant: "destructive",
       })
       return
@@ -117,8 +131,8 @@ export function BoardLabelsManager({
 
     if (!response.ok) {
       toast({
-        title: "Something went wrong.",
-        description: "The label was not updated. Please try again.",
+        title: msg.common.errorTitle,
+        description: `A etiqueta não foi atualizada. ${msg.common.tryAgain}`,
         variant: "destructive",
       })
       return
@@ -140,8 +154,8 @@ export function BoardLabelsManager({
 
     if (!response.ok) {
       toast({
-        title: "Something went wrong.",
-        description: "The label was not deleted. Please try again.",
+        title: msg.common.errorTitle,
+        description: `A etiqueta não foi excluída. ${msg.common.tryAgain}`,
         variant: "destructive",
       })
       return
@@ -179,8 +193,8 @@ export function BoardLabelsManager({
 
     if (!response.ok) {
       toast({
-        title: "Something went wrong.",
-        description: "Label order was not saved. Please try again.",
+        title: msg.common.errorTitle,
+        description: `A ordem das etiquetas não foi salva. ${msg.common.tryAgain}`,
         variant: "destructive",
       })
       return
@@ -199,31 +213,31 @@ export function BoardLabelsManager({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Tags className="h-4 w-4" />
-              Board labels
+              Etiquetas do board
             </DialogTitle>
             <DialogDescription>
-              Create colored labels for this board. Names are optional.
+              Crie etiquetas coloridas para este board. Os nomes são opcionais.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-3 rounded-lg border border-dashed p-3">
               <p className="text-sm font-medium">
-                {editingLabelId ? "Edit label" : "Create label"}
+                {editingLabelId ? "Editar etiqueta" : "Criar etiqueta"}
               </p>
               <div className="space-y-2">
                 <Label htmlFor="label-name" className="text-xs text-muted-foreground">
-                  Name (optional)
+                  Nome (opcional)
                 </Label>
                 <Input
                   id="label-name"
                   value={name}
                   onChange={(event) => setName(event.target.value)}
-                  placeholder="e.g. Backend"
+                  placeholder="ex.: Backend"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Color</Label>
+                <Label className="text-xs text-muted-foreground">Cor</Label>
                 <div className="flex flex-wrap gap-2">
                   {LABEL_COLOR_PRESETS.map((preset) => (
                     <button
@@ -237,8 +251,8 @@ export function BoardLabelsManager({
                           : "border-transparent"
                       )}
                       style={{ backgroundColor: preset.value }}
-                      title={preset.label}
-                      aria-label={preset.label}
+                      title={COLOR_PRESET_LABELS[preset.label] ?? preset.label}
+                      aria-label={COLOR_PRESET_LABELS[preset.label] ?? preset.label}
                     />
                   ))}
                 </div>
@@ -261,7 +275,7 @@ export function BoardLabelsManager({
                         resetCreateForm()
                       }}
                     >
-                      Save changes
+                      Salvar alterações
                     </Button>
                     <Button
                       type="button"
@@ -269,7 +283,7 @@ export function BoardLabelsManager({
                       variant="ghost"
                       onClick={resetCreateForm}
                     >
-                      Cancel
+                      {msg.common.cancel}
                     </Button>
                   </>
                 ) : (
@@ -280,17 +294,17 @@ export function BoardLabelsManager({
                     onClick={() => void createLabel()}
                   >
                     <Plus className="mr-2 h-4 w-4" />
-                    Add label
+                    Adicionar etiqueta
                   </Button>
                 )}
               </DialogFooter>
             </div>
 
             <div className="space-y-2">
-              <p className="text-sm font-medium">Labels on this board</p>
+              <p className="text-sm font-medium">Etiquetas neste board</p>
               {localLabels.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  No labels yet.
+                  Nenhuma etiqueta ainda.
                 </p>
               ) : (
                 <div className="space-y-2">
@@ -306,14 +320,14 @@ export function BoardLabelsManager({
                       />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium">
-                          {label.name.trim() || "Unnamed label"}
+                          {label.name.trim() || msg.common.unnamedLabel}
                         </p>
                       </div>
                       <div className="flex items-center gap-1">
                         <button
                           type="button"
                           className="rounded-md p-1 text-muted-foreground hover:bg-accent"
-                          aria-label="Move label up"
+                          aria-label="Mover etiqueta para cima"
                           disabled={index === 0}
                           onClick={() => void moveLabel(label.id, "up")}
                         >
@@ -322,7 +336,7 @@ export function BoardLabelsManager({
                         <button
                           type="button"
                           className="rounded-md p-1 text-muted-foreground hover:bg-accent"
-                          aria-label="Move label down"
+                          aria-label="Mover etiqueta para baixo"
                           disabled={index === localLabels.length - 1}
                           onClick={() => void moveLabel(label.id, "down")}
                         >
@@ -331,7 +345,7 @@ export function BoardLabelsManager({
                         <button
                           type="button"
                           className="rounded-md p-1 text-muted-foreground hover:bg-accent"
-                          aria-label="Edit label"
+                          aria-label="Editar etiqueta"
                           onClick={() => {
                             setEditingLabelId(label.id)
                             setName(label.name)
@@ -343,7 +357,7 @@ export function BoardLabelsManager({
                         <button
                           type="button"
                           className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-destructive"
-                          aria-label="Delete label"
+                          aria-label="Excluir etiqueta"
                           onClick={() => setDeleteLabelId(label.id)}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -366,13 +380,13 @@ export function BoardLabelsManager({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this label?</AlertDialogTitle>
+            <AlertDialogTitle>Excluir esta etiqueta?</AlertDialogTitle>
             <AlertDialogDescription>
-              It will be removed from every card on this board.
+              Ela será removida de todos os cards deste board.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{msg.common.cancel}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
@@ -381,7 +395,7 @@ export function BoardLabelsManager({
                 }
               }}
             >
-              Delete label
+              Excluir etiqueta
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

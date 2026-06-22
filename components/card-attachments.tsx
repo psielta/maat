@@ -6,6 +6,7 @@ import { Paperclip } from "lucide-react"
 import { AttachmentList } from "@/components/attachment-list"
 import { AttachmentUploader } from "@/components/attachment-uploader"
 import { toast } from "@/components/ui/use-toast"
+import { m } from "@/lib/i18n"
 import type { AttachmentModel } from "@/lib/upload-attachment"
 
 export function CardAttachments({
@@ -23,6 +24,7 @@ export function CardAttachments({
   canManage: boolean
   refreshSignal: number
 }) {
+  const msgs = m()
   const [attachments, setAttachments] = React.useState<AttachmentModel[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
 
@@ -57,8 +59,8 @@ export function CardAttachments({
     if (!response.ok) {
       setAttachments(previous)
       toast({
-        title: "Something went wrong.",
-        description: "The attachment was not removed. Please try again.",
+        title: msgs.common.errorTitle,
+        description: msgs.toast.attachmentNotRemoved,
         variant: "destructive",
       })
     }
@@ -68,7 +70,7 @@ export function CardAttachments({
     <section className="space-y-3">
       <div className="flex items-center gap-2">
         <Paperclip className="h-4 w-4 text-muted-foreground" />
-        <h3 className="text-sm font-semibold">Attachments</h3>
+        <h3 className="text-sm font-semibold">{msgs.card.attachments}</h3>
       </div>
       <div className="pl-6">
         {canUpload && (
@@ -83,10 +85,12 @@ export function CardAttachments({
         )}
         {isLoading ? (
           <p className="mt-3 text-sm text-muted-foreground">
-            Loading attachments…
+            {msgs.card.loadingAttachments}
           </p>
         ) : attachments.length === 0 ? (
-          <p className="mt-3 text-sm text-muted-foreground">No attachments yet.</p>
+          <p className="mt-3 text-sm text-muted-foreground">
+            {msgs.card.noAttachments}
+          </p>
         ) : (
           <div className="mt-3">
             <AttachmentList

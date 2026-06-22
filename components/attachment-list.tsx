@@ -4,6 +4,7 @@ import { Download, FileIcon, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { formatFileSize } from "@/lib/attachment-utils"
+import { m } from "@/lib/i18n"
 import type { AttachmentModel } from "@/lib/upload-attachment"
 
 export function AttachmentList({
@@ -23,6 +24,8 @@ export function AttachmentList({
   onRemove?: (attachmentId: string) => void | Promise<void>
   canDeleteAttachment?: (attachment: AttachmentModel) => boolean
 }) {
+  const msgs = m()
+
   if (attachments.length === 0) {
     return null
   }
@@ -56,7 +59,12 @@ export function AttachmentList({
               className="inline-flex h-8 items-center justify-center rounded-md px-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
             >
               <Download className="h-4 w-4" />
-              <span className="sr-only">Download {attachment.fileName}</span>
+              <span className="sr-only">
+                {msgs.attachments.downloadFile.replace(
+                  "{fileName}",
+                  attachment.fileName
+                )}
+              </span>
             </a>
             {canDelete && (
               <Button
@@ -67,7 +75,12 @@ export function AttachmentList({
                 onClick={() => void onRemove?.(attachment.id)}
               >
                 <Trash2 className="h-4 w-4" />
-                <span className="sr-only">Delete {attachment.fileName}</span>
+                <span className="sr-only">
+                  {msgs.attachments.deleteFile.replace(
+                    "{fileName}",
+                    attachment.fileName
+                  )}
+                </span>
               </Button>
             )}
           </li>

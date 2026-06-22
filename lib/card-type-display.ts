@@ -1,6 +1,8 @@
 import type { LucideIcon } from "lucide-react"
 import { Bug, CheckSquare, Layers, Sparkles } from "lucide-react"
 
+import { messages } from "@/lib/messages/pt-br"
+
 export const BOARD_CARD_TYPES = [
   "DEFAULT",
   "TASK",
@@ -19,27 +21,27 @@ type CardTypeMeta = {
 
 const CARD_TYPE_META: Record<BoardCardTypeValue, CardTypeMeta> = {
   DEFAULT: {
-    label: "No type",
+    label: messages.common.noType,
     icon: null,
     className: "",
   },
   TASK: {
-    label: "Task",
+    label: messages.cardTypes.task,
     icon: CheckSquare,
     className: "text-blue-600 dark:text-blue-400",
   },
   BUG: {
-    label: "Bug",
+    label: messages.cardTypes.bug,
     icon: Bug,
     className: "text-red-600 dark:text-red-400",
   },
   FEATURE: {
-    label: "Feature",
+    label: messages.cardTypes.feature,
     icon: Sparkles,
     className: "text-violet-600 dark:text-violet-400",
   },
   EPIC: {
-    label: "Epic",
+    label: messages.cardTypes.epic,
     icon: Layers,
     className: "text-amber-600 dark:text-amber-400",
   },

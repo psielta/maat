@@ -15,6 +15,8 @@ import {
 } from "date-fns"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
+import { ptBR } from "date-fns/locale"
+
 import type { BoardCardModel } from "@/components/board-view"
 import { CardDateBadge } from "@/components/card-date-badge"
 import { Button } from "@/components/ui/button"
@@ -87,25 +89,27 @@ export function BoardCalendarView({
             size="sm"
             className="h-8 w-8 px-0"
             onClick={() => setMonth((current) => addMonths(current, -1))}
-            aria-label="Previous month"
+            aria-label="Mês anterior"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <h2 className="text-sm font-semibold">{format(month, "MMMM yyyy")}</h2>
+          <h2 className="text-sm font-semibold">
+            {format(month, "MMMM yyyy", { locale: ptBR })}
+          </h2>
           <Button
             type="button"
             variant="ghost"
             size="sm"
             className="h-8 w-8 px-0"
             onClick={() => setMonth((current) => addMonths(current, 1))}
-            aria-label="Next month"
+            aria-label="Próximo mês"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
 
         <div className="grid grid-cols-7 border-b text-center text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label) => (
+          {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((label) => (
             <div key={label} className="px-2 py-2">
               {label}
             </div>
@@ -165,7 +169,7 @@ export function BoardCalendarView({
                   ))}
                   {dayCards.length > 3 && (
                     <p className="px-1 text-[10px] text-muted-foreground">
-                      +{dayCards.length - 3} more
+                      +{dayCards.length - 3} a mais
                     </p>
                   )}
                 </div>

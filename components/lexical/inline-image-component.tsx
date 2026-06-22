@@ -69,14 +69,14 @@ export function InlineImageComponent({
     <span className="my-2 block">
       <button
         type="button"
-        aria-label="Expand image"
+        aria-label="Ampliar imagem"
         disabled={!lightbox}
         onMouseDown={(event) => event.preventDefault()}
         onClick={(event) => {
           event.stopPropagation()
           lightbox?.openLightbox({
             src: currentSrc,
-            alt: altText || "Inline image",
+            alt: altText || "Imagem inline",
           })
         }}
         className={cn(
@@ -87,7 +87,7 @@ export function InlineImageComponent({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={currentSrc}
-          alt={altText || "Inline image"}
+          alt={altText || "Imagem inline"}
           width={width}
           height={height}
           className={cn(

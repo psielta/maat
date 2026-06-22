@@ -1,17 +1,18 @@
 import type { Prisma } from "@prisma/client"
 
 import { db } from "@/lib/db"
+import { messages } from "@/lib/messages/pt-br"
 
 const TOKEN_REGEX = /\{(Number(?::(\d+))?|Date|Year|Month|Day)\}/g
 const VALID_PATTERN_REGEX = /^[A-Za-z0-9_{}: -]+$/
 
 export const CARD_ID_PATTERN_TOKENS = [
-  { token: "{Number}", description: "Sequential number (resets daily when a date token is used)" },
-  { token: "{Number:3}", description: "Number padded to 3 digits (001, 002, …)" },
-  { token: "{Date}", description: "Date as DDMMYYYY" },
-  { token: "{Day}", description: "Day as DD" },
-  { token: "{Month}", description: "Month as MM" },
-  { token: "{Year}", description: "Year as YYYY" },
+  { token: "{Number}", description: messages.cardIdPattern.numberToken },
+  { token: "{Number:3}", description: messages.cardIdPattern.numberPaddedToken },
+  { token: "{Date}", description: messages.cardIdPattern.dateToken },
+  { token: "{Day}", description: messages.cardIdPattern.dayToken },
+  { token: "{Month}", description: messages.cardIdPattern.monthToken },
+  { token: "{Year}", description: messages.cardIdPattern.yearToken },
 ] as const
 
 export function normalizeCardIdPattern(pattern: string | null | undefined) {
@@ -21,19 +22,19 @@ export function normalizeCardIdPattern(pattern: string | null | undefined) {
 
 export function validateCardIdPattern(pattern: string) {
   if (!pattern.trim()) {
-    return "Pattern cannot be empty."
+    return messages.validation.patternEmpty
   }
 
   if (pattern.length > 80) {
-    return "Pattern must be 80 characters or fewer."
+    return messages.validation.patternMaxLength
   }
 
   if (!VALID_PATTERN_REGEX.test(pattern)) {
-    return "Pattern can only contain letters, numbers, spaces, hyphens, and tokens."
+    return messages.validation.patternInvalidChars
   }
 
   if (!/\{Number(?::\d+)?\}/.test(pattern)) {
-    return "Pattern must include a {Number} token."
+    return messages.validation.patternRequiresNumber
   }
 
   const unknownTokens = [...pattern.matchAll(/\{([^}]+)\}/g)]
@@ -41,14 +42,14 @@ export function validateCardIdPattern(pattern: string) {
     .filter((token) => !/^\{Number(?::\d+)?\}$/.test(token) && !/^\{(Date|Year|Month|Day)\}$/.test(token))
 
   if (unknownTokens.length > 0) {
-    return `Unknown token: ${unknownTokens[0]}`
+    return `${messages.validation.unknownToken} ${unknownTokens[0]}`
   }
 
   const paddingMatch = pattern.match(/\{Number:(\d+)\}/)
   if (paddingMatch) {
     const width = Number(paddingMatch[1])
     if (!Number.isInteger(width) || width < 1 || width > 12) {
-      return "Number padding must be between 1 and 12."
+      return messages.validation.numberPaddingRange
     }
   }
 
@@ -190,5 +191,5 @@ export async function generateCardDisplayId(
     }
   }
 
-  throw new Error("Could not generate a unique card ID.")
+  throw new Error(messages.validation.uniqueCardIdFailed)
 }

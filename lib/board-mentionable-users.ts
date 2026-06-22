@@ -45,5 +45,5 @@ export function getMentionableUsers(
 }
 
 export function getMentionDisplayName(user: MentionableUser) {
-  return user.name || user.email || "Member"
+  return user.name || user.email || "Membro"
 }

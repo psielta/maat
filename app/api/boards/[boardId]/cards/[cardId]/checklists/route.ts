@@ -9,6 +9,7 @@ import {
 import { checklistSelect } from "@/lib/checklist-select"
 import { serializeCardChecklists, serializeChecklist } from "@/lib/checklist-serialize"
 import { db } from "@/lib/db"
+
 import {
   checklistCreateSchema,
   MAX_CHECKLISTS_PER_CARD,
@@ -89,7 +90,7 @@ export async function POST(req: Request, context: RouteContext) {
     if (checklistCount >= MAX_CHECKLISTS_PER_CARD) {
       return Response.json(
         {
-          message: `Cards can have at most ${MAX_CHECKLISTS_PER_CARD} checklists.`,
+          message: `Os cards podem ter no máximo ${MAX_CHECKLISTS_PER_CARD} checklists.`,
         },
         { status: 422 }
       )

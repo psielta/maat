@@ -1,4 +1,5 @@
 import type { AttachmentResponse } from "@/lib/attachment-utils"
+import { messages } from "@/lib/messages/pt-br"
 import { putFile } from "@/lib/upload-file"
 import { MAX_ATTACHMENT_SIZE_BYTES } from "@/lib/validations/board"
 
@@ -6,11 +7,11 @@ export type AttachmentModel = AttachmentResponse
 
 export function validateAttachmentFile(file: File) {
   if (file.size <= 0) {
-    return "The selected file is empty."
+    return messages.validation.fileEmpty
   }
 
   if (file.size > MAX_ATTACHMENT_SIZE_BYTES) {
-    return "Files must be 120MB or smaller."
+    return messages.validation.filesMaxSize
   }
 
   return null
@@ -50,7 +51,7 @@ export async function uploadAttachment({
   )
 
   if (!presignResponse.ok) {
-    throw new Error("Could not start the upload.")
+    throw new Error(messages.validation.uploadStartFailed)
   }
 
   const presign = (await presignResponse.json()) as {
@@ -66,7 +67,7 @@ export async function uploadAttachment({
   )
 
   if (!completeResponse.ok) {
-    throw new Error("Could not finalize the upload.")
+    throw new Error(messages.validation.uploadFinalizeFailed)
   }
 
   return (await completeResponse.json()) as AttachmentModel

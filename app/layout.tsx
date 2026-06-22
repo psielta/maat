@@ -4,6 +4,7 @@ import type { Metadata, Viewport } from "next"
 
 import "@/styles/globals.css"
 import { siteConfig } from "@/config/site"
+import { messages } from "@/lib/messages/pt-br"
 import { Toaster } from "@/components/ui/toaster"
 import { Analytics } from "@/components/analytics"
 import { TailwindIndicator } from "@/components/tailwind-indicator"
@@ -20,14 +21,7 @@ export const metadata: Metadata = {
     template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
-  keywords: [
-    "Next.js",
-    "React",
-    "Tailwind CSS",
-    "Kanban",
-    "Task management",
-    "Realtime collaboration",
-  ],
+  keywords: [...messages.site.keywords],
   authors: [
     {
       name: "Maat",
@@ -37,7 +31,7 @@ export const metadata: Metadata = {
   creator: "Maat",
   openGraph: {
     type: "website",
-    locale: "en_US",
+    locale: "pt_BR",
     url: siteConfig.url,
     title: siteConfig.name,
     description: siteConfig.description,
@@ -67,7 +61,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html
-      lang="en"
+      lang="pt-BR"
       className={`${GeistSans.variable} ${GeistMono.variable}`}
       suppressHydrationWarning
     >

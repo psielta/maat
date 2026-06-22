@@ -87,7 +87,7 @@ export async function POST(req: Request, context: RouteContext) {
     if (labelCount >= MAX_LABELS_PER_BOARD) {
       return Response.json(
         {
-          message: `Boards can have at most ${MAX_LABELS_PER_BOARD} labels.`,
+          message: `Os boards podem ter no máximo ${MAX_LABELS_PER_BOARD} etiquetas.`,
         },
         { status: 422 }
       )

@@ -6,6 +6,7 @@ import { Paperclip } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { toast } from "@/components/ui/use-toast"
+import { m } from "@/lib/i18n"
 import {
   uploadAttachment,
   type AttachmentModel,
@@ -22,7 +23,7 @@ export function AttachmentUploader({
   target,
   disabled,
   onUploaded,
-  label = "Attach files",
+  label,
 }: {
   boardId: string
   cardId: string
@@ -31,6 +32,8 @@ export function AttachmentUploader({
   onUploaded?: (attachment: AttachmentModel) => void
   label?: string
 }) {
+  const msgs = m()
+  const resolvedLabel = label ?? msgs.common.attachFiles
   const inputRef = React.useRef<HTMLInputElement>(null)
   const [uploads, setUploads] = React.useState<UploadState[]>([])
   const [isUploading, setIsUploading] = React.useState(false)
@@ -64,11 +67,11 @@ export function AttachmentUploader({
         onUploaded?.(attachment)
       } catch (error) {
         toast({
-          title: "Upload failed",
+          title: msgs.common.uploadFailed,
           description:
             error instanceof Error
               ? error.message
-              : "The file could not be uploaded.",
+              : msgs.common.fileNotUploaded,
           variant: "destructive",
         })
       } finally {
@@ -102,12 +105,12 @@ export function AttachmentUploader({
         onClick={() => inputRef.current?.click()}
       >
         <Paperclip className="mr-2 h-4 w-4" />
-        {label}
+        {resolvedLabel}
       </Button>
       {uploads.map((upload) => (
         <div key={upload.fileName} className="space-y-1">
           <p className="truncate text-xs text-muted-foreground">
-            Uploading {upload.fileName}…
+            {msgs.common.uploading} {upload.fileName}…
           </p>
           <Progress value={upload.progress} className="h-2" />
         </div>

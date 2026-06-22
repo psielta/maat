@@ -6,6 +6,7 @@ import { useSelectedLayoutSegment } from "next/navigation"
 
 import { MainNavItem } from "types"
 import { siteConfig } from "@/config/site"
+import { messages } from "@/lib/messages/pt-br"
 import { cn } from "@/lib/utils"
 import { Icons } from "@/components/icons"
 import { MobileNav } from "@/components/mobile-nav"
@@ -51,7 +52,7 @@ export function MainNav({ items, children }: MainNavProps) {
         onClick={() => setShowMobileMenu(!showMobileMenu)}
       >
         {showMobileMenu ? <Icons.close /> : <Icons.logo />}
-        <span className="font-bold">Menu</span>
+        <span className="font-bold">{messages.common.menu}</span>
       </button>
       {showMobileMenu && items && (
         <MobileNav items={items}>{children}</MobileNav>

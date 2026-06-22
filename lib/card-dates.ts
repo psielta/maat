@@ -1,4 +1,7 @@
 import { format, isSameDay, isValid, parseISO } from "date-fns"
+import { ptBR } from "date-fns/locale"
+
+import { messages } from "@/lib/messages/pt-br"
 
 export type CardDatesModel = {
   startDate: string | null
@@ -97,16 +100,16 @@ export function formatDueBadgeLabel(dueAt: string, now = new Date()) {
 
   if (hasTime) {
     if (isSameDay(dueDate, now)) {
-      return `Today, ${format(dueDate, "h:mm a")}`
+      return `${messages.common.today}, ${format(dueDate, "HH:mm", { locale: ptBR })}`
     }
-    return format(dueDate, "MMM d, h:mm a")
+    return format(dueDate, "d MMM, HH:mm", { locale: ptBR })
   }
 
   if (isSameDay(dueDate, now)) {
-    return "Today"
+    return messages.common.today
   }
 
-  return format(dueDate, "MMM d")
+  return format(dueDate, "d MMM", { locale: ptBR })
 }
 
 export function formatStartBadgeLabel(startDate: string) {
@@ -115,7 +118,7 @@ export function formatStartBadgeLabel(startDate: string) {
     return ""
   }
 
-  return format(date, "MMM d")
+  return format(date, "d MMM", { locale: ptBR })
 }
 
 export const dueStatusStyles: Record<

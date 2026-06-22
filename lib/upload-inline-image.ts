@@ -1,4 +1,5 @@
 import type { AttachmentResponse } from "@/lib/attachment-utils"
+import { messages } from "@/lib/messages/pt-br"
 import { putFile } from "@/lib/upload-file"
 import {
   isAllowedInlineImageMime,
@@ -7,16 +8,16 @@ import {
 
 export function validateInlineImageFile(file: File) {
   if (file.size <= 0) {
-    return "The selected image is empty."
+    return messages.validation.imageEmpty
   }
 
   const mimeType = file.type || "application/octet-stream"
   if (!isAllowedInlineImageMime(mimeType)) {
-    return "Only JPEG, PNG, WebP, and GIF images are supported."
+    return messages.validation.imagesSupported
   }
 
   if (file.size > MAX_INLINE_IMAGE_SIZE_BYTES) {
-    return "Images must be 10MB or smaller."
+    return messages.validation.imagesMaxSize
   }
 
   return null
@@ -59,7 +60,7 @@ export async function uploadInlineImage({
     const payload = await presignResponse.json().catch(() => null)
     throw new Error(
       (payload as { message?: string } | null)?.message ??
-        "Could not start the image upload."
+        messages.validation.imageUploadStartFailed
     )
   }
 
@@ -76,7 +77,7 @@ export async function uploadInlineImage({
   )
 
   if (!completeResponse.ok) {
-    throw new Error("Could not finalize the image upload.")
+    throw new Error(messages.validation.imageUploadFinalizeFailed)
   }
 
   return (await completeResponse.json()) as AttachmentResponse

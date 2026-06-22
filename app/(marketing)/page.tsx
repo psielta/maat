@@ -1,45 +1,39 @@
 import Link from "next/link"
 
 import { cn } from "@/lib/utils"
+import { messages } from "@/lib/messages/pt-br"
 import { buttonVariants } from "@/components/ui/button"
 import { Icons } from "@/components/icons"
 
 const workflowColumns = [
   {
-    title: "Backlog",
-    items: ["Refine auth flow", "Plan API contracts"],
+    title: messages.marketing.workflowColumns.backlog,
+    items: [
+      messages.marketing.workflowItems.refineAuth,
+      messages.marketing.workflowItems.planApi,
+    ],
   },
   {
-    title: "Building",
-    items: ["Realtime board events", "Review migrations"],
+    title: messages.marketing.workflowColumns.building,
+    items: [
+      messages.marketing.workflowItems.realtimeEvents,
+      messages.marketing.workflowItems.reviewMigrations,
+    ],
   },
   {
-    title: "Review",
-    items: ["Polish empty states", "Write agent docs"],
+    title: messages.marketing.workflowColumns.review,
+    items: [
+      messages.marketing.workflowItems.polishEmpty,
+      messages.marketing.workflowItems.writeDocs,
+    ],
   },
 ]
 
 const features = [
-  {
-    title: "Developer-first boards",
-    description:
-      "Organize tasks, bugs, refactors, experiments, and release work in focused Kanban boards.",
-  },
-  {
-    title: "Shared workspaces",
-    description:
-      "Invite another user as an editor or viewer and collaborate without duplicating context.",
-  },
-  {
-    title: "Rich cards & comments",
-    description:
-      "Write task details in a rich text editor and discuss work with teammates through card comments.",
-  },
-  {
-    title: "Realtime updates",
-    description:
-      "Board changes are broadcast through Redis and streamed to connected browsers with SSE.",
-  },
+  messages.marketing.features.developerBoards,
+  messages.marketing.features.sharedWorkspaces,
+  messages.marketing.features.richCards,
+  messages.marketing.features.realtime,
 ]
 
 export default function IndexPage() {
@@ -50,26 +44,25 @@ export default function IndexPage() {
           <div className="max-w-2xl space-y-7">
             <div className="inline-flex items-center rounded-full border px-3 py-1 text-sm text-muted-foreground">
               <Icons.boards className="mr-2 h-4 w-4 text-primary" />
-              Personal task control for software developers
+              {messages.marketing.heroBadge}
             </div>
             <div className="space-y-4">
               <h1 className="font-heading text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl">
-                Maat keeps your developer work visible, shared, and moving.
+                {messages.marketing.heroTitle}
               </h1>
               <p className="max-w-xl text-lg leading-8 text-muted-foreground">
-                Plan personal projects, client work, bugs, and experiments with
-                collaborative Kanban boards built for a real portfolio app.
+                {messages.marketing.heroSubtitle}
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
               <Link href="/login" className={cn(buttonVariants({ size: "lg" }))}>
-                Start with email
+                {messages.marketing.getStarted}
               </Link>
               <Link
                 href="/dashboard"
                 className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
               >
-                Open workspace
+                {messages.marketing.openWorkspace}
               </Link>
             </div>
           </div>
@@ -78,13 +71,13 @@ export default function IndexPage() {
             <div className="rounded-md border bg-background">
               <div className="flex items-center justify-between border-b px-4 py-3">
                 <div>
-                  <p className="text-sm font-semibold">Maat workspace</p>
+                  <p className="text-sm font-semibold">{messages.marketing.workspaceTitle}</p>
                   <p className="text-xs text-muted-foreground">
-                    Portfolio launch board
+                    {messages.marketing.workspaceSubtitle}
                   </p>
                 </div>
                 <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
-                  Live
+                  {messages.common.live}
                 </span>
               </div>
               <div className="grid gap-3 p-3 md:grid-cols-3">

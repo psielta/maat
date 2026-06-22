@@ -205,7 +205,7 @@ export function Mdx({ code }: MdxProps) {
                 {
                   properties: {
                     className: ["subheading-anchor"],
-                    ariaLabel: "Link to section",
+                    ariaLabel: "Link para a seção",
                   },
                 },
               ],

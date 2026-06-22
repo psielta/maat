@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { formatDistanceToNow } from "date-fns"
+import { ptBR } from "date-fns/locale"
 
 import { AttachmentList } from "@/components/attachment-list"
 import { AttachmentUploader } from "@/components/attachment-uploader"
@@ -13,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { toast } from "@/components/ui/use-toast"
 import { RichTextEditor } from "@/components/rich-text-editor"
+import { m } from "@/lib/i18n"
 import type { MentionableUser } from "@/lib/board-mentionable-users"
 import type { AttachmentModel } from "@/lib/upload-attachment"
 
@@ -50,6 +52,7 @@ export function CardComments({
   refreshSignal: number
   mentionableUsers?: MentionableUser[]
 }) {
+  const msgs = m()
   const [comments, setComments] = React.useState<CommentModel[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
   const [draft, setDraft] = React.useState("")
@@ -86,8 +89,8 @@ export function CardComments({
     if (!response.ok) {
       setComments(previous)
       toast({
-        title: "Something went wrong.",
-        description: "The comment was not removed. Please try again.",
+        title: msgs.common.errorTitle,
+        description: msgs.toast.commentNotRemoved,
         variant: "destructive",
       })
     }
@@ -116,8 +119,8 @@ export function CardComments({
     if (!response.ok) {
       setComments(previous)
       toast({
-        title: "Something went wrong.",
-        description: "The attachment was not removed. Please try again.",
+        title: msgs.common.errorTitle,
+        description: msgs.toast.attachmentNotRemoved,
         variant: "destructive",
       })
     }
@@ -137,8 +140,8 @@ export function CardComments({
     if (!response.ok) {
       setPendingAttachments(previous)
       toast({
-        title: "Something went wrong.",
-        description: "The attachment was not removed. Please try again.",
+        title: msgs.common.errorTitle,
+        description: msgs.toast.attachmentNotRemoved,
         variant: "destructive",
       })
     }
@@ -164,8 +167,8 @@ export function CardComments({
 
     if (!response.ok) {
       return toast({
-        title: "Something went wrong.",
-        description: "Your comment was not posted. Please try again.",
+        title: msgs.common.errorTitle,
+        description: msgs.toast.commentNotPosted,
         variant: "destructive",
       })
     }
@@ -188,8 +191,8 @@ export function CardComments({
             onChange={setDraft}
             placeholder={
               mentionableUsers.length > 0
-                ? "Write a comment… Use @ to mention someone."
-                : "Write a comment… Share the board to mention members."
+                ? msgs.card.commentPlaceholder
+                : msgs.card.commentPlaceholderNoMentions
             }
             className="bg-background"
             mentionableUsers={mentionableUsers}
@@ -224,16 +227,18 @@ export function CardComments({
               size="sm"
               disabled={!draft.trim() || isSubmitting}
             >
-              Comment
+              {msgs.card.comment}
             </Button>
           </div>
         </form>
       )}
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading comments…</p>
+        <p className="text-sm text-muted-foreground">
+          {msgs.card.loadingComments}
+        </p>
       ) : comments.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No comments yet.</p>
+        <p className="text-sm text-muted-foreground">{msgs.card.noComments}</p>
       ) : (
         <ul className="space-y-3">
           {comments.map((comment) => {
@@ -260,6 +265,7 @@ export function CardComments({
                     <span className="shrink-0 text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(comment.createdAt), {
                         addSuffix: true,
+                        locale: ptBR,
                       })}
                     </span>
                   </div>
@@ -302,7 +308,7 @@ export function CardComments({
                       onClick={() => void removeComment(comment.id)}
                       className="mt-1 text-xs text-muted-foreground transition-colors hover:text-destructive"
                     >
-                      Delete
+                      {msgs.common.delete}
                     </button>
                   )}
                 </div>

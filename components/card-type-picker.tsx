@@ -7,9 +7,26 @@ import {
   getCardTypeMeta,
   type BoardCardTypeValue,
 } from "@/lib/card-type-display"
+import { m } from "@/lib/i18n"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
+
+function getCardTypeLabel(type: BoardCardTypeValue) {
+  const msgs = m()
+  switch (type) {
+    case "TASK":
+      return msgs.cardTypes.task
+    case "BUG":
+      return msgs.cardTypes.bug
+    case "FEATURE":
+      return msgs.cardTypes.feature
+    case "EPIC":
+      return msgs.cardTypes.epic
+    default:
+      return msgs.common.noType
+  }
+}
 
 export function CardTypePicker({
   boardId,
@@ -24,6 +41,8 @@ export function CardTypePicker({
   canEdit: boolean
   onCardTypeChange: (cardType: BoardCardTypeValue) => void
 }) {
+  const msgs = m()
+
   async function persistType(nextType: BoardCardTypeValue) {
     const previousType = cardType
     onCardTypeChange(nextType)
@@ -39,8 +58,8 @@ export function CardTypePicker({
     if (!response.ok) {
       onCardTypeChange(previousType)
       toast({
-        title: "Something went wrong.",
-        description: "Card type was not saved. Please try again.",
+        title: msgs.common.errorTitle,
+        description: msgs.toast.cardTypeNotSaved,
         variant: "destructive",
       })
       return
@@ -54,7 +73,7 @@ export function CardTypePicker({
     <section>
       <div className="mb-2 flex items-center gap-2">
         <Shapes className="h-4 w-4 text-muted-foreground" />
-        <h3 className="text-sm font-semibold">Type</h3>
+        <h3 className="text-sm font-semibold">{msgs.card.type}</h3>
       </div>
       <div className="flex flex-wrap gap-2 pl-6">
         {BOARD_CARD_TYPES.map((type) => {
@@ -79,7 +98,7 @@ export function CardTypePicker({
               }}
             >
               {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
-              {meta.label}
+              {getCardTypeLabel(type)}
             </Button>
           )
         })}

@@ -7,6 +7,7 @@ import { Resend } from "resend"
 import { env } from "@/env.mjs"
 import { siteConfig } from "@/config/site"
 import { db } from "@/lib/db"
+import { messages } from "@/lib/messages/pt-br"
 
 const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null
 
@@ -29,12 +30,12 @@ function getDisplayHost(url: string) {
 
 function createMagicLinkText(url: string) {
   return [
-    `Sign in to ${siteConfig.name}`,
+    `${messages.auth.magicLinkSubject} ${siteConfig.name}`,
     "",
-    "Use the link below to securely access your account:",
+    messages.auth.magicLinkTextIntro,
     url,
     "",
-    "If you did not request this email, you can safely ignore it.",
+    messages.auth.magicLinkTextIgnore,
   ].join("\n")
 }
 
@@ -45,13 +46,13 @@ function createMagicLinkEmail(url: string) {
 
   return `
     <!doctype html>
-    <html lang="en">
+    <html lang="pt-BR">
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="color-scheme" content="light" />
         <meta name="supported-color-schemes" content="light" />
-        <title>Sign in to ${escapedName}</title>
+        <title>${messages.auth.magicLinkSubject} ${escapedName}</title>
         <style>
           @media only screen and (max-width: 620px) {
             .container { width: 100% !important; }
@@ -63,7 +64,7 @@ function createMagicLinkEmail(url: string) {
       </head>
       <body style="margin:0; padding:0; background:#f4f4f5; color:#18181b; font-family:Arial, Helvetica, sans-serif;">
         <div style="display:none; max-height:0; overflow:hidden; opacity:0;">
-          Your secure sign in link for ${escapedName}.
+          ${messages.auth.magicLinkPreview} ${escapedName}.
         </div>
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f4f4f5; margin:0; padding:32px 16px;">
           <tr>
@@ -85,36 +86,36 @@ function createMagicLinkEmail(url: string) {
                       <tr>
                         <td class="content" style="padding:36px 36px 32px 36px;">
                           <p style="margin:0 0 12px 0; font-size:13px; line-height:20px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#71717a;">
-                            Secure access
+                            ${messages.auth.secureAccess}
                           </p>
                           <h1 style="margin:0; font-size:28px; line-height:34px; font-weight:700; color:#09090b;">
-                            Sign in to ${escapedName}
+                            ${messages.auth.magicLinkHeading} ${escapedName}
                           </h1>
                           <p style="margin:18px 0 0 0; font-size:16px; line-height:26px; color:#3f3f46;">
-                            Use this one-time link to continue to your account. The button below will take you to ${displayHost}.
+                            ${messages.auth.magicLinkBody} ${displayHost}.
                           </p>
                           <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:28px 0 0 0;">
                             <tr>
                               <td>
                                 <a class="button" href="${escapedUrl}" style="display:inline-block; border-radius:10px; background:#18181b; color:#ffffff; font-size:15px; line-height:20px; font-weight:700; text-decoration:none; padding:14px 22px;">
-                                  Sign in securely
+                                  ${messages.auth.signInSecurely}
                                 </a>
                               </td>
                             </tr>
                           </table>
                           <div style="margin:30px 0 0 0; padding:18px; border-radius:10px; background:#fafafa; border:1px solid #e4e4e7;">
                             <p style="margin:0 0 8px 0; font-size:13px; line-height:20px; font-weight:700; color:#27272a;">
-                              Button not working?
+                              ${messages.auth.buttonNotWorking}
                             </p>
                             <p style="margin:0; font-size:13px; line-height:20px; color:#52525b;">
-                              Copy and paste this link into your browser:
+                              ${messages.auth.copyPasteLink}
                             </p>
                             <p style="margin:10px 0 0 0; font-size:12px; line-height:18px; word-break:break-all;">
                               <a href="${escapedUrl}" style="color:#2563eb; text-decoration:underline;">${escapedUrl}</a>
                             </p>
                           </div>
                           <p style="margin:24px 0 0 0; font-size:13px; line-height:20px; color:#71717a;">
-                            If you did not request this email, you can safely ignore it.
+                            ${messages.auth.magicLinkTextIgnore}
                           </p>
                         </td>
                       </tr>
@@ -124,7 +125,7 @@ function createMagicLinkEmail(url: string) {
                 <tr>
                   <td style="padding:18px 8px 0 8px; text-align:center;">
                     <p style="margin:0; font-size:12px; line-height:18px; color:#71717a;">
-                      Sent by ${escapedName}
+                      ${messages.auth.sentBy} ${escapedName}
                     </p>
                   </td>
                 </tr>
@@ -162,7 +163,7 @@ async function sendDevelopmentEmail({
   await transport.sendMail({
     to: identifier,
     from,
-    subject: `Sign in to ${siteConfig.name}`,
+    subject: `${messages.auth.magicLinkSubject} ${siteConfig.name}`,
     html: createMagicLinkEmail(url),
     text: createMagicLinkText(url),
   })
@@ -184,7 +185,7 @@ async function sendProductionEmail({
   const { error } = await resend.emails.send({
     to: [identifier],
     from,
-    subject: `Sign in to ${siteConfig.name}`,
+    subject: `${messages.auth.magicLinkSubject} ${siteConfig.name}`,
     html: createMagicLinkEmail(url),
     text: createMagicLinkText(url),
     headers: {

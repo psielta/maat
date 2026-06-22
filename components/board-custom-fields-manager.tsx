@@ -15,6 +15,7 @@ import {
   CUSTOM_FIELD_COLOR_PRESETS,
   CUSTOM_FIELD_DEFAULT_COLOR,
 } from "@/lib/custom-field-colors"
+import { m } from "@/lib/i18n"
 import type { CustomFieldDefinitionModel } from "@/lib/custom-field-display"
 import { Button } from "@/components/ui/button"
 import {
@@ -54,12 +55,25 @@ type DraftOption = {
   color: string
 }
 
+const msg = m()
+
 const FIELD_TYPE_LABELS: Record<CustomFieldType, string> = {
-  TEXT: "Text",
-  NUMBER: "Number",
+  TEXT: "Texto",
+  NUMBER: "Número",
   CHECKBOX: "Checkbox",
-  DATE: "Date",
+  DATE: "Data",
   DROPDOWN: "Dropdown",
+}
+
+const COLOR_PRESET_LABELS: Record<string, string> = {
+  Blue: "Azul",
+  Green: "Verde",
+  Yellow: "Amarelo",
+  Orange: "Laranja",
+  Red: "Vermelho",
+  Purple: "Roxo",
+  Pink: "Rosa",
+  Gray: "Cinza",
 }
 
 function emptyOption(): DraftOption {
@@ -131,8 +145,8 @@ export function BoardCustomFieldsManager({
 
       if (nextOptions.length === 0) {
         toast({
-          title: "Dropdown needs options",
-          description: "Add at least one option before creating the field.",
+          title: "O dropdown precisa de opções",
+          description: "Adicione pelo menos uma opção antes de criar o campo.",
           variant: "destructive",
         })
         return
@@ -153,8 +167,8 @@ export function BoardCustomFieldsManager({
 
     if (!response.ok) {
       toast({
-        title: "Something went wrong.",
-        description: "The custom field was not created. Please try again.",
+        title: msg.common.errorTitle,
+        description: `O campo personalizado não foi criado. ${msg.common.tryAgain}`,
         variant: "destructive",
       })
       return
@@ -189,8 +203,8 @@ export function BoardCustomFieldsManager({
 
     if (!response.ok) {
       toast({
-        title: "Something went wrong.",
-        description: "The custom field was not updated. Please try again.",
+        title: msg.common.errorTitle,
+        description: `O campo personalizado não foi atualizado. ${msg.common.tryAgain}`,
         variant: "destructive",
       })
       return
@@ -213,8 +227,8 @@ export function BoardCustomFieldsManager({
 
     if (!response.ok) {
       toast({
-        title: "Something went wrong.",
-        description: "The custom field was not deleted. Please try again.",
+        title: msg.common.errorTitle,
+        description: `O campo personalizado não foi excluído. ${msg.common.tryAgain}`,
         variant: "destructive",
       })
       return
@@ -252,8 +266,8 @@ export function BoardCustomFieldsManager({
 
     if (!response.ok) {
       toast({
-        title: "Something went wrong.",
-        description: "Custom field order was not saved. Please try again.",
+        title: msg.common.errorTitle,
+        description: `A ordem dos campos personalizados não foi salva. ${msg.common.tryAgain}`,
         variant: "destructive",
       })
       return
@@ -280,18 +294,18 @@ export function BoardCustomFieldsManager({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ListChecks className="h-5 w-5" />
-              Custom fields
+              {msg.board.customFields}
             </DialogTitle>
             <DialogDescription>
-              Define fields shared by every card on this board. Editors can fill
-              values on each card.
+              Defina campos compartilhados por todos os cards deste board.
+              Editores podem preencher valores em cada card.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             {localFields.length === 0 ? (
               <p className="rounded-lg border border-dashed px-4 py-6 text-sm text-muted-foreground">
-                No custom fields yet. Add the first one below.
+                Nenhum campo personalizado ainda. Adicione o primeiro abaixo.
               </p>
             ) : (
               <div className="space-y-2">
@@ -321,7 +335,7 @@ export function BoardCustomFieldsManager({
                           <p className="font-medium">{field.name}</p>
                           <p className="text-xs text-muted-foreground">
                             {FIELD_TYPE_LABELS[field.type]}
-                            {field.showOnFront ? " · shown on card front" : ""}
+                            {field.showOnFront ? " · exibido na frente do card" : ""}
                           </p>
                           {field.type === "DROPDOWN" && field.options.length > 0 && (
                             <div className="mt-2 flex flex-wrap gap-1.5">
@@ -345,7 +359,7 @@ export function BoardCustomFieldsManager({
                             className="h-8 w-8 px-0"
                             disabled={index === 0}
                             onClick={() => void moveField(field.id, "up")}
-                            aria-label="Move field up"
+                            aria-label="Mover campo para cima"
                           >
                             <ArrowUp className="h-4 w-4" />
                           </Button>
@@ -356,7 +370,7 @@ export function BoardCustomFieldsManager({
                             className="h-8 w-8 px-0"
                             disabled={index === localFields.length - 1}
                             onClick={() => void moveField(field.id, "down")}
-                            aria-label="Move field down"
+                            aria-label="Mover campo para baixo"
                           >
                             <ArrowDown className="h-4 w-4" />
                           </Button>
@@ -366,7 +380,7 @@ export function BoardCustomFieldsManager({
                             variant="ghost"
                             className="h-8 w-8 px-0"
                             onClick={() => setEditingFieldId(field.id)}
-                            aria-label="Edit field"
+                            aria-label="Editar campo"
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
@@ -376,7 +390,7 @@ export function BoardCustomFieldsManager({
                             variant="ghost"
                             className="h-8 w-8 text-destructive hover:text-destructive"
                             onClick={() => setDeleteFieldId(field.id)}
-                            aria-label="Delete field"
+                            aria-label="Excluir campo"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -389,19 +403,19 @@ export function BoardCustomFieldsManager({
             )}
 
             <div className="space-y-3 rounded-lg border border-dashed p-4">
-              <p className="text-sm font-medium">Add a field</p>
+              <p className="text-sm font-medium">Adicionar um campo</p>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="custom-field-name">Name</Label>
+                  <Label htmlFor="custom-field-name">Nome</Label>
                   <Input
                     id="custom-field-name"
                     value={name}
                     onChange={(event) => setName(event.target.value)}
-                    placeholder="Priority"
+                    placeholder="Prioridade"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Type</Label>
+                  <Label>Tipo</Label>
                   <Select
                     value={type}
                     onValueChange={(value) =>
@@ -424,9 +438,9 @@ export function BoardCustomFieldsManager({
 
               <div className="flex items-center justify-between rounded-md border px-3 py-2">
                 <div>
-                  <p className="text-sm font-medium">Show on front of card</p>
+                  <p className="text-sm font-medium">Exibir na frente do card</p>
                   <p className="text-xs text-muted-foreground">
-                    Display this field as a badge on the board.
+                    Mostra este campo como um badge no board.
                   </p>
                 </div>
                 <Switch checked={showOnFront} onCheckedChange={setShowOnFront} />
@@ -434,7 +448,7 @@ export function BoardCustomFieldsManager({
 
               {type === "DROPDOWN" && (
                 <div className="space-y-2">
-                  <Label>Options</Label>
+                  <Label>Opções</Label>
                   {options.map((option, index) => (
                     <div key={index} className="flex items-center gap-2">
                       <Input
@@ -448,7 +462,7 @@ export function BoardCustomFieldsManager({
                             )
                           )
                         }
-                        placeholder={`Option ${index + 1}`}
+                        placeholder={`Opção ${index + 1}`}
                       />
                       <Select
                         value={option.color}
@@ -473,7 +487,7 @@ export function BoardCustomFieldsManager({
                                   className="h-2.5 w-2.5 rounded-full"
                                   style={{ backgroundColor: preset.value }}
                                 />
-                                {preset.label}
+                                {COLOR_PRESET_LABELS[preset.label] ?? preset.label}
                               </span>
                             </SelectItem>
                           ))}
@@ -490,7 +504,7 @@ export function BoardCustomFieldsManager({
                             current.filter((_, itemIndex) => itemIndex !== index)
                           )
                         }
-                        aria-label="Remove option"
+                        aria-label="Remover opção"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -503,7 +517,7 @@ export function BoardCustomFieldsManager({
                     onClick={() => setOptions((current) => [...current, emptyOption()])}
                   >
                     <Plus className="mr-2 h-4 w-4" />
-                    Add option
+                    Adicionar opção
                   </Button>
                 </div>
               )}
@@ -516,7 +530,7 @@ export function BoardCustomFieldsManager({
               onClick={() => void createField()}
               disabled={isSaving || !name.trim()}
             >
-              {isSaving ? "Saving..." : "Add field"}
+              {isSaving ? "Salvando…" : "Adicionar campo"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -532,13 +546,13 @@ export function BoardCustomFieldsManager({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete custom field?</AlertDialogTitle>
+            <AlertDialogTitle>Excluir campo personalizado?</AlertDialogTitle>
             <AlertDialogDescription>
-              This removes the field and all values saved on cards.
+              Isso remove o campo e todos os valores salvos nos cards.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{msg.common.cancel}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
@@ -547,7 +561,7 @@ export function BoardCustomFieldsManager({
                 }
               }}
             >
-              Delete field
+              Excluir campo
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -607,8 +621,8 @@ function FieldEditor({
 
       if (nextOptions.length === 0) {
         toast({
-          title: "Dropdown needs options",
-          description: "Add at least one option before saving.",
+          title: "O dropdown precisa de opções",
+          description: "Adicione pelo menos uma opção antes de salvar.",
           variant: "destructive",
         })
         return
@@ -625,18 +639,18 @@ function FieldEditor({
   return (
     <div className="space-y-3">
       <div className="space-y-1.5">
-        <Label>Name</Label>
+        <Label>Nome</Label>
         <Input value={name} onChange={(event) => setName(event.target.value)} />
       </div>
       <div className="flex items-center justify-between rounded-md border px-3 py-2">
         <div>
-          <p className="text-sm font-medium">Show on front of card</p>
+          <p className="text-sm font-medium">Exibir na frente do card</p>
         </div>
         <Switch checked={showOnFront} onCheckedChange={setShowOnFront} />
       </div>
       {type === "DROPDOWN" && (
         <div className="space-y-2">
-          <Label>Options</Label>
+          <Label>Opções</Label>
           {options.map((option, index) => (
             <div key={index} className="flex items-center gap-2">
               <Input
@@ -672,7 +686,7 @@ function FieldEditor({
                           className="h-2.5 w-2.5 rounded-full"
                           style={{ backgroundColor: preset.value }}
                         />
-                        {preset.label}
+                        {COLOR_PRESET_LABELS[preset.label] ?? preset.label}
                       </span>
                     </SelectItem>
                   ))}
@@ -689,7 +703,7 @@ function FieldEditor({
                     current.filter((_, itemIndex) => itemIndex !== index)
                   )
                 }
-                aria-label="Remove option"
+                aria-label="Remover opção"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -702,13 +716,13 @@ function FieldEditor({
             onClick={() => setOptions((current) => [...current, emptyOption()])}
           >
             <Plus className="mr-2 h-4 w-4" />
-            Add option
+            Adicionar opção
           </Button>
         </div>
       )}
       <div className="flex justify-end gap-2">
         <Button type="button" size="sm" variant="ghost" onClick={onCancel}>
-          Cancel
+          {msg.common.cancel}
         </Button>
         <Button
           type="button"
@@ -716,7 +730,7 @@ function FieldEditor({
           onClick={() => void handleSave()}
           disabled={isSaving || !name.trim()}
         >
-          {isSaving ? "Saving..." : "Save"}
+          {isSaving ? "Salvando…" : msg.common.save}
         </Button>
       </div>
     </div>

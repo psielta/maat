@@ -9,6 +9,7 @@ import {
   normalizeCustomFieldValue,
 } from "@/lib/custom-field-values"
 import { db } from "@/lib/db"
+import { msg } from "@/lib/messages/pt-br"
 import { cardCustomFieldsPatchSchema } from "@/lib/validations/board"
 
 const routeContextSchema = z.object({
@@ -79,7 +80,7 @@ export async function PATCH(req: Request, context: RouteContext) {
       const field = fieldById.get(entry.fieldId)
       if (!field) {
         return Response.json(
-          { message: "One or more custom fields do not belong to this board." },
+          { message: msg.api.customFieldsNotOnBoard },
           { status: 422 }
         )
       }

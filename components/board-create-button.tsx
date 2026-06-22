@@ -4,9 +4,12 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 
 import { cn } from "@/lib/utils"
+import { m } from "@/lib/i18n"
 import { ButtonProps, buttonVariants } from "@/components/ui/button"
 import { toast } from "@/components/ui/use-toast"
 import { Icons } from "@/components/icons"
+
+const msg = m()
 
 interface BoardCreateButtonProps extends ButtonProps {}
 
@@ -27,8 +30,8 @@ export function BoardCreateButton({
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        title: "Untitled board",
-        description: "Plan, prioritize, and move work across the board.",
+        title: "Board sem título",
+        description: "Planeje, priorize e mova o trabalho pelo board.",
       }),
     })
 
@@ -36,11 +39,11 @@ export function BoardCreateButton({
 
     if (!response?.ok) {
       return toast({
-        title: "Something went wrong.",
+        title: msg.common.errorTitle,
         description:
           response.status === 403
-            ? "Your session is no longer valid. Sign in again and try once more."
-            : "Your board was not created. Please try again.",
+            ? "Sua sessão não é mais válida. Entre novamente e tente outra vez."
+            : `O board não foi criado. ${msg.common.tryAgain}`,
         variant: "destructive",
       })
     }
@@ -69,7 +72,7 @@ export function BoardCreateButton({
       ) : (
         <Icons.add className="mr-2 h-4 w-4" />
       )}
-      New board
+      Novo board
     </button>
   )
 }

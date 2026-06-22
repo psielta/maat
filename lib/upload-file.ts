@@ -25,10 +25,10 @@ export function putFile(
         return
       }
 
-      reject(new Error("Upload failed."))
+      reject(new Error("Falha no envio."))
     }
 
-    request.onerror = () => reject(new Error("Upload failed."))
+    request.onerror = () => reject(new Error("Falha no envio."))
     request.send(file)
   })
 }

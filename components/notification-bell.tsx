@@ -3,8 +3,10 @@
 import * as React from "react"
 import Link from "next/link"
 import { formatDistanceToNow } from "date-fns"
+import { ptBR } from "date-fns/locale"
 import { Bell } from "lucide-react"
 
+import { m } from "@/lib/i18n"
 import { notifyNotificationsChanged } from "@/lib/notification-events"
 import { cn } from "@/lib/utils"
 import {
@@ -41,18 +43,33 @@ type NotificationItem = {
 }
 
 function describe(item: NotificationItem) {
+  const msgs = m()
   const data = item.data || {}
-  const actor = data.actorName || item.actor?.name || item.actor?.email || "Someone"
+  const actor =
+    data.actorName ||
+    item.actor?.name ||
+    item.actor?.email ||
+    msgs.common.someone
+  const cardTitle = data.cardTitle ?? msgs.common.aCard
+  const boardTitle = data.boardTitle ?? msgs.common.aBoard
+
   if (item.type === "comment.created") {
-    return `${actor} commented on “${data.cardTitle ?? "a card"}”`
+    return msgs.notifications.commentedOn
+      .replace("{actor}", actor)
+      .replace("{cardTitle}", cardTitle)
   }
   if (item.type === "comment.mentioned") {
-    return `${actor} mentioned you on “${data.cardTitle ?? "a card"}”`
+    return msgs.notifications.mentionedYouOn
+      .replace("{actor}", actor)
+      .replace("{cardTitle}", cardTitle)
   }
-  return `${actor} updated ${data.boardTitle ?? "a board"}`
+  return msgs.notifications.updatedBoard
+    .replace("{actor}", actor)
+    .replace("{boardTitle}", boardTitle)
 }
 
 export function NotificationBell({ className }: { className?: string }) {
+  const msgs = m()
   const [items, setItems] = React.useState<NotificationItem[]>([])
   const [unread, setUnread] = React.useState(0)
   const [open, setOpen] = React.useState(false)
@@ -97,7 +114,7 @@ export function NotificationBell({ className }: { className?: string }) {
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label="Notifications"
+          aria-label={msgs.nav.notifications}
           className={cn(
             "relative flex h-9 w-9 items-center justify-center rounded-md text-foreground transition-colors hover:bg-accent",
             className
@@ -113,17 +130,22 @@ export function NotificationBell({ className }: { className?: string }) {
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-0">
         <div className="flex items-center justify-between border-b px-3 py-2.5">
-          <span className="text-sm font-semibold">Notifications</span>
+          <span className="text-sm font-semibold">{msgs.nav.notifications}</span>
           {unread > 0 && (
             <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-              {unread} new
+              {unread === 1
+                ? msgs.notifications.oneNew
+                : msgs.notifications.manyNew.replace(
+                    "{count}",
+                    String(unread)
+                  )}
             </span>
           )}
         </div>
         <div className="max-h-[360px] overflow-y-auto">
           {items.length === 0 ? (
             <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-              You&apos;re all caught up.
+              {msgs.nav.caughtUp}
             </p>
           ) : (
             <ul className="divide-y">
@@ -165,6 +187,7 @@ export function NotificationBell({ className }: { className?: string }) {
                         <p className="mt-0.5 text-[11px] text-muted-foreground">
                           {formatDistanceToNow(new Date(item.createdAt), {
                             addSuffix: true,
+                            locale: ptBR,
                           })}
                         </p>
                       </div>

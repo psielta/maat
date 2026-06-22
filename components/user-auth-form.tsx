@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form"
 import * as z from "zod"
 
 import { cn } from "@/lib/utils"
+import { messages } from "@/lib/messages/pt-br"
 import { userAuthSchema } from "@/lib/validations/auth"
 import { buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -43,15 +44,15 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
 
     if (!signInResult?.ok) {
       return toast({
-        title: "Something went wrong.",
-        description: "Your sign in request failed. Please try again.",
+        title: messages.common.errorTitle,
+        description: messages.auth.signInErrorDesc,
         variant: "destructive",
       })
     }
 
     return toast({
-      title: "Check your email",
-      description: "We sent you a login link. Be sure to check your spam too.",
+      title: messages.auth.checkEmail,
+      description: messages.auth.checkEmailDesc,
     })
   }
 
@@ -61,11 +62,11 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
         <div className="grid gap-2">
           <div className="grid gap-1">
             <Label className="sr-only" htmlFor="email">
-              Email
+              {messages.common.email}
             </Label>
             <Input
               id="email"
-              placeholder="name@example.com"
+              placeholder={messages.auth.emailPlaceholder}
               type="email"
               autoCapitalize="none"
               autoComplete="email"
@@ -83,7 +84,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
             {isLoading && (
               <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
             )}
-            Continue with email
+            {messages.auth.continueWithEmail}
           </button>
         </div>
       </form>

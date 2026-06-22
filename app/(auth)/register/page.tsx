@@ -2,14 +2,15 @@ import Link from "next/link"
 import { Suspense } from "react"
 
 import { cn } from "@/lib/utils"
+import { messages } from "@/lib/messages/pt-br"
 import { buttonVariants } from "@/components/ui/button"
 import { Icons } from "@/components/icons"
 import { ModeToggle } from "@/components/mode-toggle"
 import { UserAuthForm } from "@/components/user-auth-form"
 
 export const metadata = {
-  title: "Create an account",
-  description: "Create a Maat account.",
+  title: messages.legal.createAccountTitle,
+  description: messages.legal.createAccountMeta,
 }
 
 export default function RegisterPage() {
@@ -21,7 +22,7 @@ export default function RegisterPage() {
           href="/login"
           className={cn(buttonVariants({ variant: "ghost" }))}
         >
-          Login
+          {messages.auth.login}
         </Link>
       </div>
       <div className="hidden h-full bg-muted lg:block" />
@@ -30,29 +31,29 @@ export default function RegisterPage() {
           <div className="flex flex-col space-y-2 text-center">
             <Icons.logo className="mx-auto h-6 w-6" />
             <h1 className="text-2xl font-semibold tracking-tight">
-              Create your Maat account
+              {messages.auth.createAccount}
             </h1>
             <p className="text-sm text-muted-foreground">
-              Enter your email to start organizing your developer work.
+              {messages.auth.createAccountDesc}
             </p>
           </div>
           <Suspense fallback={null}>
             <UserAuthForm />
           </Suspense>
           <p className="px-8 text-center text-sm text-muted-foreground">
-            By clicking continue, you agree to our{" "}
+            {messages.legal.agreePrefix}{" "}
             <Link
               href="/terms"
               className="hover:text-brand underline underline-offset-4"
             >
-              Terms of Service
+              {messages.legal.termsOfService}
             </Link>{" "}
-            and{" "}
+            {messages.legal.and}{" "}
             <Link
               href="/privacy"
               className="hover:text-brand underline underline-offset-4"
             >
-              Privacy Policy
+              {messages.legal.privacyPolicy}
             </Link>
             .
           </p>

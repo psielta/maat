@@ -4,6 +4,7 @@ import Link from "next/link"
 import { User } from "next-auth"
 import { signOut } from "next-auth/react"
 
+import { messages } from "@/lib/messages/pt-br"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,10 +40,10 @@ export function UserAccountNav({ user }: UserAccountNavProps) {
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/dashboard">Dashboard</Link>
+          <Link href="/dashboard">{messages.nav.dashboard}</Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/dashboard/settings">Settings</Link>
+          <Link href="/dashboard/settings">{messages.nav.settings}</Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
@@ -54,7 +55,7 @@ export function UserAccountNav({ user }: UserAccountNavProps) {
             })
           }}
         >
-          Sign out
+          {messages.nav.signOut}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

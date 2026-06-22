@@ -1,6 +1,7 @@
 import * as z from "zod"
 
 import { getCurrentUserId } from "@/lib/board-access"
+import { msg } from "@/lib/messages/pt-br"
 import { recordBoardEvent } from "@/lib/board-events"
 import { db } from "@/lib/db"
 import { boardCreateSchema } from "@/lib/validations/board"
@@ -10,7 +11,7 @@ export async function GET() {
     const userId = await getCurrentUserId()
 
     if (!userId) {
-      return new Response("Unauthorized", { status: 403 })
+      return new Response(msg.common.unauthorized, { status: 403 })
     }
 
     const boards = await db.board.findMany({
@@ -69,7 +70,7 @@ export async function POST(req: Request) {
     const userId = await getCurrentUserId()
 
     if (!userId) {
-      return new Response("Unauthorized", { status: 403 })
+      return new Response(msg.common.unauthorized, { status: 403 })
     }
 
     const json = await req.json()
@@ -88,9 +89,9 @@ export async function POST(req: Request) {
         },
         lists: {
           create: [
-            { title: "To do", order: 0 },
-            { title: "Doing", order: 1 },
-            { title: "Done", order: 2 },
+            { title: msg.board.defaultLists.todo, order: 0 },
+            { title: msg.board.defaultLists.doing, order: 1 },
+            { title: msg.board.defaultLists.done, order: 2 },
           ],
         },
       },

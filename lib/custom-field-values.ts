@@ -1,5 +1,7 @@
 import type { BoardCustomFieldType } from "@prisma/client"
 
+import { messages } from "@/lib/messages/pt-br"
+
 export type CustomFieldDefinition = {
   id: string
   type: BoardCustomFieldType
@@ -52,14 +54,14 @@ export function normalizeCustomFieldValue(
   switch (field.type) {
     case "TEXT": {
       if (typeof raw !== "string") {
-        throw new CustomFieldValueError("Text fields require a string value.")
+        throw new CustomFieldValueError(messages.validation.textRequiresString)
       }
       const textValue = raw.trim()
       if (isEmptyText(textValue)) {
         return null
       }
       if (textValue.length > 500) {
-        throw new CustomFieldValueError("Text values must be 500 characters or fewer.")
+        throw new CustomFieldValueError(messages.validation.textMaxLength)
       }
       return {
         textValue,
@@ -71,7 +73,7 @@ export function normalizeCustomFieldValue(
     }
     case "NUMBER": {
       if (typeof raw !== "number" || Number.isNaN(raw)) {
-        throw new CustomFieldValueError("Number fields require a numeric value.")
+        throw new CustomFieldValueError(messages.validation.numberRequiresNumeric)
       }
       return {
         textValue: null,
@@ -83,7 +85,7 @@ export function normalizeCustomFieldValue(
     }
     case "CHECKBOX": {
       if (typeof raw !== "boolean") {
-        throw new CustomFieldValueError("Checkbox fields require a boolean value.")
+        throw new CustomFieldValueError(messages.validation.checkboxRequiresBoolean)
       }
       if (!raw) {
         return null
@@ -98,11 +100,11 @@ export function normalizeCustomFieldValue(
     }
     case "DATE": {
       if (typeof raw !== "string") {
-        throw new CustomFieldValueError("Date fields require an ISO date string.")
+        throw new CustomFieldValueError(messages.validation.dateRequiresIso)
       }
       const dateValue = new Date(`${raw}T00:00:00.000Z`)
       if (Number.isNaN(dateValue.getTime())) {
-        throw new CustomFieldValueError("Date fields require a valid date.")
+        throw new CustomFieldValueError(messages.validation.dateRequiresValid)
       }
       return {
         textValue: null,
@@ -114,7 +116,7 @@ export function normalizeCustomFieldValue(
     }
     case "DROPDOWN": {
       if (typeof raw !== "string") {
-        throw new CustomFieldValueError("Dropdown fields require an option id.")
+        throw new CustomFieldValueError(messages.validation.dropdownRequiresOptionId)
       }
       const optionId = raw.trim()
       if (!optionId) {
@@ -122,7 +124,7 @@ export function normalizeCustomFieldValue(
       }
       const optionExists = field.options?.some((option) => option.id === optionId)
       if (!optionExists) {
-        throw new CustomFieldValueError("Dropdown value must match an existing option.")
+        throw new CustomFieldValueError(messages.validation.dropdownOptionMustExist)
       }
       return {
         textValue: null,
@@ -133,7 +135,7 @@ export function normalizeCustomFieldValue(
       }
     }
     default:
-      throw new CustomFieldValueError("Unsupported custom field type.")
+      throw new CustomFieldValueError(messages.validation.unsupportedFieldType)
   }
 }
 

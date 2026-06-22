@@ -8,6 +8,7 @@ import {
   userCanReadBoard,
 } from "@/lib/board-access"
 import { recordBoardEvent } from "@/lib/board-events"
+import { msg } from "@/lib/messages/pt-br"
 import { db } from "@/lib/db"
 import { extractInlineImageIds } from "@/lib/lexical-inline-images"
 import { extractMentionedUserIds } from "@/lib/lexical-mentions"
@@ -172,7 +173,7 @@ export async function POST(req: Request, context: RouteContext) {
 
     if (inlineImageIds.length > MAX_INLINE_IMAGES_PER_CONTENT) {
       return Response.json(
-        { message: "Too many inline images in this comment." },
+        { message: msg.api.tooManyInlineImages },
         { status: 422 }
       )
     }
@@ -192,7 +193,7 @@ export async function POST(req: Request, context: RouteContext) {
 
       if (validInlineImages.length !== inlineImageIds.length) {
         return Response.json(
-          { message: "One or more inline images are invalid." },
+          { message: msg.api.invalidInlineImages },
           { status: 422 }
         )
       }
@@ -213,7 +214,7 @@ export async function POST(req: Request, context: RouteContext) {
 
       if (validAttachments.length !== attachmentIds.length) {
         return Response.json(
-          { message: "One or more attachments are invalid." },
+          { message: msg.api.invalidAttachments },
           { status: 422 }
         )
       }
@@ -231,7 +232,7 @@ export async function POST(req: Request, context: RouteContext) {
 
     if (invalidMention) {
       return Response.json(
-        { message: "One or more mentioned users are not board members." },
+        { message: msg.api.mentionedUsersNotMembers },
         { status: 422 }
       )
     }

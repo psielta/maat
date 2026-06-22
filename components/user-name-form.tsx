@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form"
 import * as z from "zod"
 
 import { cn } from "@/lib/utils"
+import { messages } from "@/lib/messages/pt-br"
 import { userNameSchema } from "@/lib/validations/user"
 import { buttonVariants } from "@/components/ui/button"
 import {
@@ -60,14 +61,14 @@ export function UserNameForm({ user, className, ...props }: UserNameFormProps) {
 
     if (!response?.ok) {
       return toast({
-        title: "Something went wrong.",
-        description: "Your name was not updated. Please try again.",
+        title: messages.common.errorTitle,
+        description: messages.toast.nameNotUpdated,
         variant: "destructive",
       })
     }
 
     toast({
-      description: "Your name has been updated.",
+      description: messages.toast.nameUpdated,
     })
 
     router.refresh()
@@ -81,16 +82,15 @@ export function UserNameForm({ user, className, ...props }: UserNameFormProps) {
     >
       <Card>
         <CardHeader>
-          <CardTitle>Your Name</CardTitle>
+          <CardTitle>{messages.settings.yourName}</CardTitle>
           <CardDescription>
-            Please enter your full name or a display name you are comfortable
-            with.
+            {messages.settings.nameDescription}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-1">
             <Label className="sr-only" htmlFor="name">
-              Name
+              {messages.common.name}
             </Label>
             <Input
               id="name"
@@ -112,7 +112,7 @@ export function UserNameForm({ user, className, ...props }: UserNameFormProps) {
             {isSaving && (
               <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
             )}
-            <span>Save</span>
+            <span>{messages.common.save}</span>
           </button>
         </CardFooter>
       </Card>

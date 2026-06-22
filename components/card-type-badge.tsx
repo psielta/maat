@@ -3,7 +3,24 @@ import {
   shouldShowCardTypeBadge,
   type BoardCardTypeValue,
 } from "@/lib/card-type-display"
+import { m } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
+
+function getCardTypeLabel(type: BoardCardTypeValue) {
+  const msgs = m()
+  switch (type) {
+    case "TASK":
+      return msgs.cardTypes.task
+    case "BUG":
+      return msgs.cardTypes.bug
+    case "FEATURE":
+      return msgs.cardTypes.feature
+    case "EPIC":
+      return msgs.cardTypes.epic
+    default:
+      return msgs.common.noType
+  }
+}
 
 export function CardTypeBadge({
   cardType,
@@ -32,7 +49,7 @@ export function CardTypeBadge({
       )}
     >
       <Icon className="h-3 w-3 shrink-0" />
-      {meta.label}
+      {getCardTypeLabel(cardType)}
     </span>
   )
 }

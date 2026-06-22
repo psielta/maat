@@ -8,6 +8,7 @@ import {
 import { recordBoardEvent } from "@/lib/board-events"
 import { normalizeCardLinkPair } from "@/lib/card-link-utils"
 import { db } from "@/lib/db"
+import { msg } from "@/lib/messages/pt-br"
 import { cardLinkCreateSchema } from "@/lib/validations/board"
 
 const routeContextSchema = z.object({
@@ -174,7 +175,7 @@ export async function POST(req: Request, context: RouteContext) {
 
     if (body.targetCardId === params.cardId) {
       return Response.json(
-        { message: "A card cannot be linked to itself." },
+        { message: msg.api.cardCannotLinkSelf },
         { status: 400 }
       )
     }
@@ -186,7 +187,7 @@ export async function POST(req: Request, context: RouteContext) {
 
     if (!targetCard) {
       return Response.json(
-        { message: "Target card was not found on this board." },
+        { message: msg.api.targetCardNotFound },
         { status: 404 }
       )
     }
@@ -210,7 +211,7 @@ export async function POST(req: Request, context: RouteContext) {
 
     if (existing) {
       return Response.json(
-        { message: "These cards are already linked." },
+        { message: msg.api.cardsAlreadyLinked },
         { status: 409 }
       )
     }

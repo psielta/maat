@@ -3,14 +3,15 @@ import Link from "next/link"
 import { Suspense } from "react"
 
 import { cn } from "@/lib/utils"
+import { messages } from "@/lib/messages/pt-br"
 import { buttonVariants } from "@/components/ui/button"
 import { Icons } from "@/components/icons"
 import { ModeToggle } from "@/components/mode-toggle"
 import { UserAuthForm } from "@/components/user-auth-form"
 
 export const metadata: Metadata = {
-  title: "Login",
-  description: "Sign in to Maat",
+  title: messages.legal.loginTitle,
+  description: messages.legal.loginMeta,
 }
 
 export default function LoginPage() {
@@ -25,7 +26,7 @@ export default function LoginPage() {
       >
         <>
           <Icons.chevronLeft className="mr-2 h-4 w-4" />
-          Back
+          {messages.auth.back}
         </>
       </Link>
       <div className="absolute right-4 top-4 md:right-8 md:top-8">
@@ -35,10 +36,10 @@ export default function LoginPage() {
         <div className="flex flex-col space-y-2 text-center">
           <Icons.logo className="mx-auto h-6 w-6" />
           <h1 className="text-2xl font-semibold tracking-tight">
-            Welcome back to Maat
+            {messages.auth.welcomeBack}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Enter your email to access your task workspace.
+            {messages.auth.welcomeBackDesc}
           </p>
         </div>
         <Suspense fallback={null}>
@@ -49,7 +50,7 @@ export default function LoginPage() {
             href="/register"
             className="hover:text-brand underline underline-offset-4"
           >
-            Don&apos;t have an account? Sign up
+            {messages.legal.noAccountSignUp}
           </Link>
         </p>
       </div>

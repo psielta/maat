@@ -1,5 +1,6 @@
 import * as z from "zod"
 
+import { messages } from "@/lib/messages/pt-br"
 import { validateCardIdPattern } from "@/lib/card-id-pattern"
 import { isValidDateOnly } from "@/lib/card-dates"
 import { isValidCustomFieldColor } from "@/lib/custom-field-colors"
@@ -50,7 +51,7 @@ export const boardListPatchSchema = z
   .refine(
     (data) => data.title !== undefined || data.archived !== undefined,
     {
-      message: "At least one field must be provided.",
+      message: messages.validation.atLeastOneField,
     }
   )
 
@@ -69,7 +70,7 @@ const cardDateOnlySchema = z
     if (!isValidDateOnly(value)) {
       ctx.addIssue({
         code: "custom",
-        message: "Date must use YYYY-MM-DD format.",
+        message: messages.validation.dateFormat,
       })
     }
   })
@@ -82,7 +83,7 @@ const cardDueAtSchema = z
     if (Number.isNaN(parsed)) {
       ctx.addIssue({
         code: "custom",
-        message: "Due date must be a valid ISO datetime.",
+        message: messages.validation.dueDateIso,
       })
     }
   })
@@ -117,7 +118,7 @@ export const boardCardPatchSchema = z
       data.dueComplete !== undefined ||
       data.archived !== undefined,
     {
-      message: "At least one field must be provided.",
+      message: messages.validation.atLeastOneField,
     }
   )
 
@@ -156,7 +157,7 @@ export const boardAttachmentPresignSchema = z
     if (!isAllowedInlineImageMime(data.mimeType)) {
       ctx.addIssue({
         code: "custom",
-        message: "Only JPEG, PNG, WebP, and GIF images are supported.",
+        message: messages.validation.imagesSupported,
         path: ["mimeType"],
       })
     }
@@ -164,7 +165,7 @@ export const boardAttachmentPresignSchema = z
     if (data.sizeBytes > MAX_INLINE_IMAGE_SIZE_BYTES) {
       ctx.addIssue({
         code: "custom",
-        message: "Images must be 10MB or smaller.",
+        message: messages.validation.imagesMaxSize,
         path: ["sizeBytes"],
       })
     }
@@ -216,7 +217,7 @@ const customFieldOptionSchema = z.object({
       if (!isValidCustomFieldColor(value)) {
         ctx.addIssue({
           code: "custom",
-          message: "Color must be one of the supported presets.",
+          message: messages.validation.colorPreset,
         })
       }
     }),
@@ -238,14 +239,14 @@ export const customFieldCreateSchema = z
     if (data.type === "DROPDOWN" && !data.options?.length) {
       ctx.addIssue({
         code: "custom",
-        message: "Dropdown fields require at least one option.",
+        message: messages.validation.dropdownRequiresOptions,
         path: ["options"],
       })
     }
     if (data.type !== "DROPDOWN" && data.options?.length) {
       ctx.addIssue({
         code: "custom",
-        message: "Options are only supported for dropdown fields.",
+        message: messages.validation.optionsOnlyDropdown,
         path: ["options"],
       })
     }
@@ -263,7 +264,7 @@ export const customFieldPatchSchema = z
       data.showOnFront !== undefined ||
       data.options !== undefined,
     {
-      message: "At least one field must be provided.",
+      message: messages.validation.atLeastOneField,
     }
   )
 
@@ -286,7 +287,7 @@ const labelColorSchema = z.string().trim().superRefine((value, ctx) => {
   if (!isValidLabelColor(value)) {
     ctx.addIssue({
       code: "custom",
-      message: "Color must be one of the supported presets.",
+      message: messages.validation.colorPreset,
     })
   }
 })
@@ -302,7 +303,7 @@ export const labelPatchSchema = z
     color: labelColorSchema.optional(),
   })
   .refine((data) => data.name !== undefined || data.color !== undefined, {
-    message: "At least one field must be provided.",
+    message: messages.validation.atLeastOneField,
   })
 
 export const labelReorderSchema = z.object({
@@ -340,7 +341,7 @@ export const checklistItemPatchSchema = z
   .refine(
     (data) => data.text !== undefined || data.isComplete !== undefined,
     {
-      message: "At least one field must be provided.",
+      message: messages.validation.atLeastOneField,
     }
   )
 

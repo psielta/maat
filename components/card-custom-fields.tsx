@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { toast } from "@/components/ui/use-toast"
+import { m } from "@/lib/i18n"
 
 const EMPTY_CUSTOM_FIELD_VALUES: CustomFieldClientValue[] = []
 
@@ -100,6 +101,7 @@ export function CardCustomFields({
   canEdit: boolean
   onValuesChange: (values: CustomFieldClientValue[]) => void
 }) {
+  const msgs = m()
   const safeValues = values ?? EMPTY_CUSTOM_FIELD_VALUES
   const [drafts, setDrafts] = React.useState(() =>
     buildDraftValues(fields, safeValues)
@@ -137,8 +139,8 @@ export function CardCustomFields({
 
     if (!response.ok) {
       toast({
-        title: "Something went wrong.",
-        description: "Custom field values were not saved. Please try again.",
+        title: msgs.common.errorTitle,
+        description: msgs.toast.customFieldValuesNotSaved,
         variant: "destructive",
       })
       return
@@ -194,7 +196,7 @@ export function CardCustomFields({
     <section className="space-y-3">
       <div className="flex items-center gap-2">
         <ListChecks className="h-4 w-4 text-muted-foreground" />
-        <h3 className="text-sm font-semibold">Custom fields</h3>
+        <h3 className="text-sm font-semibold">{msgs.card.customFields}</h3>
       </div>
       <div className="space-y-3 pl-6">
         {fields.map((field) => {
@@ -208,7 +210,7 @@ export function CardCustomFields({
                   value={String(draft?.value ?? "")}
                   onChange={(event) => updateDraft(field.id, event.target.value)}
                   disabled={!canEdit}
-                  placeholder="Enter text"
+                  placeholder={msgs.common.enterText}
                 />
               )}
               {field.type === "NUMBER" && (
@@ -217,7 +219,7 @@ export function CardCustomFields({
                   value={String(draft?.value ?? "")}
                   onChange={(event) => updateDraft(field.id, event.target.value)}
                   disabled={!canEdit}
-                  placeholder="Enter number"
+                  placeholder={msgs.common.enterNumber}
                 />
               )}
               {field.type === "DATE" && (
@@ -253,7 +255,7 @@ export function CardCustomFields({
                   disabled={!canEdit}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select an option" />
+                    <SelectValue placeholder={msgs.common.selectOption} />
                   </SelectTrigger>
                   <SelectContent>
                     {field.options.map((option) => (

@@ -44,6 +44,39 @@ async function userCanAccessCard(boardId: string, cardId: string, userId: string
   return count > 0
 }
 
+async function getCardOnBoard(boardId: string, cardId: string) {
+  return db.boardCard.findFirst({
+    where: {
+      id: cardId,
+      list: {
+        boardId,
+      },
+    },
+    select: {
+      id: true,
+      listId: true,
+      archivedAt: true,
+    },
+  })
+}
+
+async function getNextCardOrder(listId: string) {
+  const lastCard = await db.boardCard.findFirst({
+    where: {
+      listId,
+      archivedAt: null,
+    },
+    orderBy: {
+      order: "desc",
+    },
+    select: {
+      order: true,
+    },
+  })
+
+  return (lastCard?.order ?? -1) + 1
+}
+
 export async function PATCH(req: Request, context: RouteContext) {
   try {
     const { params } = routeContextSchema.parse({
@@ -61,6 +94,84 @@ export async function PATCH(req: Request, context: RouteContext) {
 
     const json = await req.json()
     const body = boardCardPatchSchema.parse(json)
+    const existing = await getCardOnBoard(params.boardId, params.cardId)
+
+    if (!existing) {
+      return new Response(null, { status: 404 })
+    }
+
+    if (body.archived === true && existing.archivedAt) {
+      const card = await db.boardCard.findFirst({
+        where: {
+          id: params.cardId,
+        },
+        select: cardSelect,
+      })
+
+      return Response.json({
+        ...card,
+        ...serializeCardDates(card!),
+      })
+    }
+
+    if (body.archived === false && !existing.archivedAt) {
+      const card = await db.boardCard.findFirst({
+        where: {
+          id: params.cardId,
+        },
+        select: cardSelect,
+      })
+
+      return Response.json({
+        ...card,
+        ...serializeCardDates(card!),
+      })
+    }
+
+    if (body.archived === true) {
+      await db.boardCard.update({
+        where: {
+          id: params.cardId,
+        },
+        data: {
+          archivedAt: new Date(),
+        },
+      })
+
+      await recordBoardEvent({
+        boardId: params.boardId,
+        actorId: userId,
+        action: "card.archived",
+      })
+
+      return new Response(null, { status: 204 })
+    }
+
+    if (body.archived === false) {
+      const nextOrder = await getNextCardOrder(existing.listId)
+
+      const card = await db.boardCard.update({
+        where: {
+          id: params.cardId,
+        },
+        data: {
+          archivedAt: null,
+          order: nextOrder,
+        },
+        select: cardSelect,
+      })
+
+      await recordBoardEvent({
+        boardId: params.boardId,
+        actorId: userId,
+        action: "card.restored",
+      })
+
+      return Response.json({
+        ...card,
+        ...serializeCardDates(card),
+      })
+    }
 
     if (body.description !== undefined) {
       try {
@@ -124,7 +235,7 @@ export async function PATCH(req: Request, context: RouteContext) {
   }
 }
 
-export async function DELETE(req: Request, context: RouteContext) {
+export async function DELETE(_req: Request, context: RouteContext) {
   try {
     const { params } = routeContextSchema.parse({
       params: await context.params,
@@ -137,6 +248,21 @@ export async function DELETE(req: Request, context: RouteContext) {
 
     if (!(await userCanAccessCard(params.boardId, params.cardId, userId))) {
       return new Response(null, { status: 404 })
+    }
+
+    const existing = await getCardOnBoard(params.boardId, params.cardId)
+
+    if (!existing) {
+      return new Response(null, { status: 404 })
+    }
+
+    if (!existing.archivedAt) {
+      return Response.json(
+        {
+          message: "Archive the card before deleting it permanently.",
+        },
+        { status: 400 }
+      )
     }
 
     await db.boardCard.delete({

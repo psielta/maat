@@ -89,6 +89,9 @@ export default async function BoardPage({ params }: BoardPageProps) {
           title: true,
           order: true,
           cards: {
+            where: {
+              archivedAt: null,
+            },
             select: {
               ...cardSelect,
               ...cardChecklistsSelect,

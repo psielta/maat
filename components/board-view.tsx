@@ -26,6 +26,7 @@ import {
 import { CSS } from "@dnd-kit/utilities"
 import {
   AlignLeft,
+  Archive,
   Bell,
   CalendarDays,
   Kanban,
@@ -73,6 +74,7 @@ import { BoardCustomFieldsManager } from "@/components/board-custom-fields-manag
 import { CardAttachments } from "@/components/card-attachments"
 import { CardComments } from "@/components/card-comments"
 import { BoardCalendarView } from "@/components/board-calendar-view"
+import { BoardArchivedCards } from "@/components/board-archived-cards"
 import { BoardLabelsManager } from "@/components/board-labels-manager"
 import { CardCustomFields } from "@/components/card-custom-fields"
 import { CardLabelStrips } from "@/components/card-label-strips"
@@ -775,6 +777,7 @@ export function BoardView({
   const [isDetailsOpen, setIsDetailsOpen] = React.useState(false)
   const [isCustomFieldsOpen, setIsCustomFieldsOpen] = React.useState(false)
   const [isLabelsOpen, setIsLabelsOpen] = React.useState(false)
+  const [isArchivedOpen, setIsArchivedOpen] = React.useState(false)
   const [boardViewMode, setBoardViewMode] = React.useState<"board" | "calendar">(
     "board"
   )
@@ -1404,22 +1407,27 @@ export function BoardView({
     return toast({ description: "Card saved." })
   }
 
-  async function deleteSelectedCard() {
+  async function archiveSelectedCard() {
     if (!access.canEdit) return
     if (!selectedCard) return
-    if (!window.confirm("Delete this card?")) return
+
+    const cardId = selectedCard.id
 
     const response = await fetch(
-      `/api/boards/${board.id}/cards/${selectedCard.id}`,
+      `/api/boards/${board.id}/cards/${cardId}`,
       {
-        method: "DELETE",
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ archived: true }),
       }
     )
 
     if (!response.ok) {
       return toast({
         title: "Something went wrong.",
-        description: "Your card was not deleted. Please try again.",
+        description: "Your card was not archived. Please try again.",
         variant: "destructive",
       })
     }
@@ -1427,11 +1435,12 @@ export function BoardView({
     setLists((current) =>
       current.map((list) => ({
         ...list,
-        cards: list.cards.filter((card) => card.id !== selectedCard.id),
+        cards: list.cards.filter((card) => card.id !== cardId),
       }))
     )
     setSelectedCard(null)
     router.refresh()
+    toast({ description: "Card archived." })
   }
 
   async function shareBoard(event: React.FormEvent<HTMLFormElement>) {
@@ -1643,6 +1652,12 @@ export function BoardView({
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-44">
+                  {access.canRead && (
+                    <DropdownMenuItem onSelect={() => setIsArchivedOpen(true)}>
+                      <Archive className="mr-2 h-4 w-4" />
+                      Archived cards
+                    </DropdownMenuItem>
+                  )}
                   {access.canEdit && (
                     <DropdownMenuItem onSelect={() => setIsDetailsOpen(true)}>
                       <Pencil className="mr-2 h-4 w-4" />
@@ -1862,6 +1877,13 @@ export function BoardView({
         onFieldsChange={setCustomFields}
       />
 
+      <BoardArchivedCards
+        boardId={board.id}
+        open={isArchivedOpen}
+        onOpenChange={setIsArchivedOpen}
+        canEdit={access.canEdit}
+      />
+
       <BoardLabelsManager
         boardId={board.id}
         labels={labels}
@@ -2026,11 +2048,10 @@ export function BoardView({
                             type="button"
                             size="sm"
                             variant="ghost"
-                            className="text-destructive hover:text-destructive"
-                            onClick={deleteSelectedCard}
+                            onClick={archiveSelectedCard}
                           >
-                            <Icons.trash className="mr-2 h-4 w-4" />
-                            Delete card
+                            <Archive className="mr-2 h-4 w-4" />
+                            Archive card
                           </Button>
                         </div>
                       )}

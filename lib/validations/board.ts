@@ -86,6 +86,7 @@ export const boardCardPatchSchema = z
     startDate: cardDateOnlySchema.nullable().optional(),
     dueAt: cardDueAtSchema.nullable().optional(),
     dueComplete: z.boolean().optional(),
+    archived: z.boolean().optional(),
   })
   .refine(
     (data) =>
@@ -93,7 +94,8 @@ export const boardCardPatchSchema = z
       data.description !== undefined ||
       data.startDate !== undefined ||
       data.dueAt !== undefined ||
-      data.dueComplete !== undefined,
+      data.dueComplete !== undefined ||
+      data.archived !== undefined,
     {
       message: "At least one field must be provided.",
     }

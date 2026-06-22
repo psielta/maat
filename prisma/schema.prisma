@@ -140,6 +140,7 @@ model BoardCard {
   dueAt       DateTime? @map(name: "due_at")
   dueComplete Boolean   @default(false) @map(name: "due_complete")
   order       Int       @default(0) @map(name: "sort_order")
+  archivedAt  DateTime? @map(name: "archived_at")
   createdAt   DateTime  @default(now()) @map(name: "created_at")
   updatedAt   DateTime  @updatedAt @map(name: "updated_at")
   listId      String    @map(name: "list_id")
@@ -152,6 +153,7 @@ model BoardCard {
   checklists        BoardCardChecklist[]
 
   @@index([listId])
+  @@index([listId, archivedAt])
   @@index([displayId])
   @@index([dueAt])
   @@map(name: "board_cards")

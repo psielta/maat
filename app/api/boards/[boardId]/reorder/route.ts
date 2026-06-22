@@ -41,6 +41,9 @@ export async function PATCH(req: Request, context: RouteContext) {
       select: {
         id: true,
         cards: {
+          where: {
+            archivedAt: null,
+          },
           select: {
             id: true,
           },

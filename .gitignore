@@ -30,6 +30,13 @@ yarn-error.log*
 .env*.local
 .env
 
+# deploy runbook with credentials (operational, never committed)
+DEPLOY.md
+
+# local session artifacts
+mcps/
+terminals/
+
 # vercel
 .vercel
 

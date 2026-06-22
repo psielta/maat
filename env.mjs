@@ -27,6 +27,10 @@ export const env = createEnv({
   client: {
     NEXT_PUBLIC_APP_URL: z.string().min(1),
   },
+  // Skip validation at build time (e.g. inside Docker) when the full set of
+  // production secrets isn't present. At runtime (without the flag) the env is
+  // still validated normally.
+  skipValidation: !!process.env.SKIP_ENV_VALIDATION,
   runtimeEnv: {
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,

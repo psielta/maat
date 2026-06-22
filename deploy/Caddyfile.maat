@@ -1,0 +1,31 @@
+# === Maat (stack maat, dominio maat.mateussalgueiro.com.br) ===
+#
+# Copia de referencia versionada do bloco do Maat. O bloco "de verdade" (que
+# persiste) e o que esta commitado no Caddyfile do TRX: D:\trx\deploy\Caddyfile
+# (no servidor /opt/trx/deploy/Caddyfile). Mantenha os dois em sincronia.
+#
+# Por que commitar no TRX e nao so anexar no servidor: o deploy.sh do TRX faz
+# `git reset --hard origin/main`, que apagaria um bloco apenas anexado a mao.
+#
+# Notas de proxy:
+# - Sem `encode` e com `flush_interval -1` no app: nao bufferiza o SSE de realtime
+#   (/api/boards/[boardId]/events).
+# - MinIO path-style: URLs pre-assinadas ficam em /maat-uploads/<key>?X-Amz-...
+#   O Caddy preserva o Host por padrao (assinatura V4 do MinIO valida).
+# - max_size 130MB cobre o limite real de anexo do app (120 MiB,
+#   lib/validations/board.ts).
+# - TLS automatico (Let's Encrypt); ja existe bloco global `email` no Caddyfile do TRX.
+
+maat.mateussalgueiro.com.br {
+    handle /maat-uploads/* {
+        request_body {
+            max_size 130MB
+        }
+        reverse_proxy maat-minio:9000
+    }
+    handle {
+        reverse_proxy maat-app:14500 {
+            flush_interval -1
+        }
+    }
+}

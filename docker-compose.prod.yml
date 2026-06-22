@@ -1,0 +1,163 @@
+# Stack de PRODUCAO do Maat para o VPS COMPARTILHADO (187.77.224.101),
+# dominio maat.mateussalgueiro.com.br.
+#
+# Ingress = Caddy compartilhado do TRX (/opt/trx, servico `caddy`), unico a
+# publicar 80/443 no host. Por isso o Maat NAO publica portas no host: o Caddy
+# alcanca `maat-app` e `maat-minio` pela rede externa `trx_trxnet`, roteando por
+# nome de container (mesmo padrao de anubis/osiris/pipoquinha).
+#
+# Redes:
+#   - maat-net    : privada (postgres, redis, minio, migrate, init).
+#   - trx_trxnet  : compartilhada; recebe so os containers que o Caddy precisa
+#                   alcancar (maat-app, maat-minio).
+#
+# Segredos vem de `.env` (NUNCA commitado — veja .env.prod.example). O `.env`
+# serve duplo: interpolacao do Compose (POSTGRES_*, MINIO_*, NEXT_PUBLIC_APP_URL)
+# e `env_file` do app/migrate.
+
+name: maat
+
+networks:
+  maat-net:
+    name: maat-net
+    internal: true
+  trx_trxnet:
+    external: true
+    name: trx_trxnet
+
+volumes:
+  postgres_data:
+    name: maat_postgres_data
+  redis_data:
+    name: maat_redis_data
+  minio_data:
+    name: maat_minio_data
+
+services:
+  maat-postgres:
+    image: postgres:16-alpine
+    container_name: maat-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - maat-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  maat-redis:
+    image: redis:7-alpine
+    container_name: maat-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - maat-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  maat-minio:
+    image: minio/minio:RELEASE.2025-01-20T14-49-07Z
+    container_name: maat-minio
+    restart: unless-stopped
+    command: ["server", "/data"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    networks:
+      # Caddy publica o caminho do bucket (/maat-uploads/*) direto no MinIO,
+      # entao ele precisa estar na rede compartilhada. Sem porta no host.
+      - maat-net
+      - trx_trxnet
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  maat-minio-init:
+    image: minio/mc
+    container_name: maat-minio-init
+    restart: "no"
+    depends_on:
+      maat-minio:
+        condition: service_healthy
+    networks:
+      - maat-net
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      S3_BUCKET: ${S3_BUCKET:-maat-uploads}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        mc alias set local http://maat-minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD" &&
+        mc mb --ignore-existing "local/$$S3_BUCKET"
+
+  maat-migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: migrate
+    container_name: maat-migrate
+    restart: "no"
+    env_file:
+      - .env
+    depends_on:
+      maat-postgres:
+        condition: service_healthy
+    networks:
+      - maat-net
+
+  maat-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+      args:
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:?Set NEXT_PUBLIC_APP_URL}
+    container_name: maat-app
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Resend so dispara com NODE_ENV=production (lib/auth.ts). Explicito aqui.
+      NODE_ENV: production
+    extra_hosts:
+      # Chamadas S3 server-side usam o endpoint publico; mapeia o dominio para o
+      # gateway do host (Caddy em :443) e evita depender de hairpin NAT.
+      - "maat.mateussalgueiro.com.br:host-gateway"
+    depends_on:
+      maat-postgres:
+        condition: service_healthy
+      maat-redis:
+        condition: service_healthy
+      maat-minio:
+        condition: service_healthy
+    networks:
+      - maat-net
+      - trx_trxnet
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:14500/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\"",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s

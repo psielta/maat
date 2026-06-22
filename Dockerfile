@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1
 # Imagem de produção do Maat (Next.js 16 standalone + Prisma + sharp).
 # Multi-stage: deps (instala + prisma generate) -> build (next build) ->
 # migrate (one-shot prisma migrate deploy) -> runner (standalone enxuto).

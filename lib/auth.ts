@@ -203,8 +203,15 @@ export const authOptions: NextAuthOptions = {
   // This is a temporary fix for prisma client.
   // @see https://github.com/prisma/prisma/issues/16117
   adapter: PrismaAdapter(db as any),
+  secret: env.NEXTAUTH_SECRET,
   session: {
     strategy: "jwt",
+    // Mantém o usuário logado por 90 dias para não precisar de um novo magic
+    // link a cada visita (cada link enviado consome a cota gratuita do Resend).
+    maxAge: 90 * 24 * 60 * 60,
+    // Renova a expiração no máximo uma vez por dia quando há atividade, então
+    // usuários ativos praticamente nunca são deslogados.
+    updateAge: 24 * 60 * 60,
   },
   pages: {
     signIn: "/login",
@@ -240,6 +247,15 @@ export const authOptions: NextAuthOptions = {
       return session
     },
     async jwt({ token, user }) {
+      // Sem e-mail no token o Prisma trataria `email: undefined` como "sem
+      // filtro" e retornaria um usuário arbitrário; preserva o token como está.
+      if (!token.email) {
+        if (user) {
+          token.id = user.id
+        }
+        return token
+      }
+
       const dbUser = await db.user.findFirst({
         where: {
           email: token.email,

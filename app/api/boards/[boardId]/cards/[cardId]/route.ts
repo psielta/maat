@@ -9,6 +9,8 @@ import {
   InlineImageValidationError,
   promoteInlineImages,
 } from "@/lib/promote-inline-images"
+import { parseDueAt, parseStartDate, serializeCardDates } from "@/lib/card-dates"
+import { cardSelect } from "@/lib/card-select"
 import { boardCardPatchSchema } from "@/lib/validations/board"
 
 const routeContextSchema = z.object({
@@ -82,15 +84,17 @@ export async function PATCH(req: Request, context: RouteContext) {
       data: {
         title: body.title,
         description: body.description,
+        ...(body.startDate !== undefined && {
+          startDate: parseStartDate(body.startDate),
+        }),
+        ...(body.dueAt !== undefined && {
+          dueAt: parseDueAt(body.dueAt),
+        }),
+        ...(body.dueComplete !== undefined && {
+          dueComplete: body.dueComplete,
+        }),
       },
-      select: {
-        id: true,
-        displayId: true,
-        title: true,
-        description: true,
-        order: true,
-        listId: true,
-      },
+      select: cardSelect,
     })
 
     if (body.description !== undefined) {
@@ -107,7 +111,10 @@ export async function PATCH(req: Request, context: RouteContext) {
       action: "card.updated",
     })
 
-    return Response.json(card)
+    return Response.json({
+      ...card,
+      ...serializeCardDates(card),
+    })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return Response.json(error.issues, { status: 422 })

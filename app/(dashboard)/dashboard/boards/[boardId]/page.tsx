@@ -5,6 +5,8 @@ import { getBoardAccess } from "@/lib/board-access"
 import { db } from "@/lib/db"
 import { getCurrentUser } from "@/lib/session"
 import { BoardView } from "@/components/board-view"
+import { serializeCardDates } from "@/lib/card-dates"
+import { cardSelect } from "@/lib/card-select"
 import { customFieldSelect, customFieldValueSelect } from "@/lib/custom-field-select"
 import { serializeCustomFieldValueRow } from "@/lib/custom-field-serialize"
 
@@ -73,12 +75,7 @@ export default async function BoardPage({ params }: BoardPageProps) {
           order: true,
           cards: {
             select: {
-              id: true,
-              displayId: true,
-              title: true,
-              description: true,
-              order: true,
-              listId: true,
+              ...cardSelect,
               customFieldValues: {
                 select: customFieldValueSelect,
               },
@@ -134,6 +131,7 @@ export default async function BoardPage({ params }: BoardPageProps) {
       ...list,
       cards: list.cards.map((card) => ({
         ...card,
+        ...serializeCardDates(card),
         customFieldValues: card.customFieldValues.map(serializeCustomFieldValueRow),
       })),
     })),

@@ -135,6 +135,9 @@ model BoardCard {
   displayId   String?   @map(name: "display_id")
   title       String
   description String?   @db.Text
+  startDate   DateTime? @db.Date @map(name: "start_date")
+  dueAt       DateTime? @map(name: "due_at")
+  dueComplete Boolean   @default(false) @map(name: "due_complete")
   order       Int       @default(0) @map(name: "sort_order")
   createdAt   DateTime  @default(now()) @map(name: "created_at")
   updatedAt   DateTime  @updatedAt @map(name: "updated_at")
@@ -147,6 +150,7 @@ model BoardCard {
 
   @@index([listId])
   @@index([displayId])
+  @@index([dueAt])
   @@map(name: "board_cards")
 }
 

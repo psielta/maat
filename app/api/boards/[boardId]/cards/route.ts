@@ -4,6 +4,8 @@ import { getCurrentUserId, userCanEditBoard } from "@/lib/board-access"
 import { recordBoardEvent } from "@/lib/board-events"
 import { generateCardDisplayId } from "@/lib/card-id-pattern"
 import { db } from "@/lib/db"
+import { serializeCardDates } from "@/lib/card-dates"
+import { cardSelect } from "@/lib/card-select"
 import { boardCardCreateSchema } from "@/lib/validations/board"
 
 const routeContextSchema = z.object({
@@ -87,14 +89,7 @@ export async function POST(req: Request, context: RouteContext) {
           order: (lastCard?.order ?? -1) + 1,
           listId: body.listId,
         },
-        select: {
-          id: true,
-          displayId: true,
-          title: true,
-          description: true,
-          order: true,
-          listId: true,
-        },
+        select: cardSelect,
       })
     })
     await recordBoardEvent({
@@ -103,7 +98,13 @@ export async function POST(req: Request, context: RouteContext) {
       action: "card.created",
     })
 
-    return Response.json(card, { status: 201 })
+    return Response.json(
+      {
+        ...card,
+        ...serializeCardDates(card),
+      },
+      { status: 201 }
+    )
   } catch (error) {
     if (error instanceof z.ZodError) {
       return Response.json(error.issues, { status: 422 })

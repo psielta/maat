@@ -1,6 +1,7 @@
 import * as z from "zod"
 
 import { validateCardIdPattern } from "@/lib/card-id-pattern"
+import { isValidDateOnly } from "@/lib/card-dates"
 import { isValidCustomFieldColor } from "@/lib/custom-field-colors"
 
 export const MAX_CUSTOM_FIELDS_PER_BOARD = 50
@@ -52,10 +53,50 @@ export const boardCardCreateSchema = z.object({
   description: z.string().trim().max(50000).optional(),
 })
 
-export const boardCardPatchSchema = z.object({
-  title: z.string().trim().min(1).max(140).optional(),
-  description: z.string().trim().max(50000).optional().nullable(),
-})
+const cardDateOnlySchema = z
+  .string()
+  .trim()
+  .superRefine((value, ctx) => {
+    if (!isValidDateOnly(value)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Date must use YYYY-MM-DD format.",
+      })
+    }
+  })
+
+const cardDueAtSchema = z
+  .string()
+  .trim()
+  .superRefine((value, ctx) => {
+    const parsed = Date.parse(value)
+    if (Number.isNaN(parsed)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Due date must be a valid ISO datetime.",
+      })
+    }
+  })
+
+export const boardCardPatchSchema = z
+  .object({
+    title: z.string().trim().min(1).max(140).optional(),
+    description: z.string().trim().max(50000).optional().nullable(),
+    startDate: cardDateOnlySchema.nullable().optional(),
+    dueAt: cardDueAtSchema.nullable().optional(),
+    dueComplete: z.boolean().optional(),
+  })
+  .refine(
+    (data) =>
+      data.title !== undefined ||
+      data.description !== undefined ||
+      data.startDate !== undefined ||
+      data.dueAt !== undefined ||
+      data.dueComplete !== undefined,
+    {
+      message: "At least one field must be provided.",
+    }
+  )
 
 export const MAX_ATTACHMENT_SIZE_BYTES = 125_829_120
 export const MAX_ATTACHMENTS_PER_TARGET = 20

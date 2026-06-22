@@ -27,6 +27,8 @@ import { CSS } from "@dnd-kit/utilities"
 import {
   AlignLeft,
   Bell,
+  CalendarDays,
+  Kanban,
   ListChecks,
   MessageSquare,
   MoreHorizontal,
@@ -69,8 +71,12 @@ import { BoardSwitcher, type BoardSummary } from "@/components/board-switcher"
 import { BoardCustomFieldsManager } from "@/components/board-custom-fields-manager"
 import { CardAttachments } from "@/components/card-attachments"
 import { CardComments } from "@/components/card-comments"
+import { BoardCalendarView } from "@/components/board-calendar-view"
 import { CardCustomFields } from "@/components/card-custom-fields"
+import { CardDateBadge } from "@/components/card-date-badge"
+import { CardDates } from "@/components/card-dates"
 import { CustomFieldBadges } from "@/components/custom-field-badges"
+import type { CardDatesModel } from "@/lib/card-dates"
 import type { CustomFieldDefinitionModel } from "@/lib/custom-field-display"
 import type { CustomFieldClientValue } from "@/lib/custom-field-values"
 import { getMentionableUsers } from "@/lib/board-mentionable-users"
@@ -92,6 +98,9 @@ export type BoardCardModel = {
   displayId: string | null
   title: string
   description: string | null
+  startDate: string | null
+  dueAt: string | null
+  dueComplete: boolean
   order: number
   listId: string
   customFieldValues: CustomFieldClientValue[]
@@ -141,6 +150,9 @@ function initialsFor(member: BoardMemberModel) {
 function normalizeCard(card: BoardCardModel): BoardCardModel {
   return {
     ...card,
+    startDate: card.startDate ?? null,
+    dueAt: card.dueAt ?? null,
+    dueComplete: card.dueComplete ?? false,
     customFieldValues: card.customFieldValues ?? [],
   }
 }
@@ -230,6 +242,7 @@ function CardSurface({
         fields={customFields}
         values={card.customFieldValues}
       />
+      <CardDateBadge dates={card} />
       {card.description && (
         <div className="mt-2 flex items-center gap-1.5 text-muted-foreground">
           <AlignLeft className="h-3.5 w-3.5 shrink-0" />
@@ -299,6 +312,7 @@ function SortableCard({
         fields={customFields}
         values={card.customFieldValues}
       />
+      <CardDateBadge dates={card} />
       {card.description && (
         <div className="mt-2 flex items-center gap-1.5 text-muted-foreground">
           <AlignLeft className="h-3.5 w-3.5 shrink-0" />
@@ -735,6 +749,9 @@ export function BoardView({
   const [isShareOpen, setIsShareOpen] = React.useState(false)
   const [isDetailsOpen, setIsDetailsOpen] = React.useState(false)
   const [isCustomFieldsOpen, setIsCustomFieldsOpen] = React.useState(false)
+  const [boardViewMode, setBoardViewMode] = React.useState<"board" | "calendar">(
+    "board"
+  )
   const [customFields, setCustomFields] = React.useState(board.customFields)
   const [isRealtimeConnected, setIsRealtimeConnected] = React.useState(false)
   const [cardDrafts, setCardDrafts] = React.useState<Record<string, string>>({})
@@ -848,6 +865,20 @@ export function BoardView({
       current?.id === cardId
         ? { ...current, customFieldValues: values }
         : current
+    )
+  }
+
+  function updateCardDates(cardId: string, dates: CardDatesModel) {
+    setLists((current) =>
+      current.map((list) => ({
+        ...list,
+        cards: list.cards.map((card) =>
+          card.id === cardId ? { ...card, ...dates } : card
+        ),
+      }))
+    )
+    setSelectedCard((current) =>
+      current?.id === cardId ? { ...current, ...dates } : current
     )
   }
 
@@ -1216,10 +1247,10 @@ export function BoardView({
       })
     }
 
-    const card = {
+    const card = normalizeCard({
       ...(await response.json()),
       customFieldValues: [] as CustomFieldClientValue[],
-    }
+    })
     setLists((current) =>
       normalizeLists(
         current.map((list) =>
@@ -1267,6 +1298,9 @@ export function BoardView({
     const card = normalizeCard({
       ...(await response.json()),
       customFieldValues: selectedCard.customFieldValues,
+      startDate: selectedCard.startDate,
+      dueAt: selectedCard.dueAt,
+      dueComplete: selectedCard.dueComplete,
     })
     setLists((current) =>
       normalizeLists(
@@ -1468,6 +1502,34 @@ export function BoardView({
           </div>
 
           <div className="flex shrink-0 items-center gap-1.5">
+            <div className="hidden items-center rounded-md border border-black/5 bg-white/50 p-0.5 dark:border-white/10 dark:bg-white/5 sm:flex">
+              <button
+                type="button"
+                onClick={() => setBoardViewMode("board")}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors",
+                  boardViewMode === "board"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Kanban className="h-3.5 w-3.5" />
+                Board
+              </button>
+              <button
+                type="button"
+                onClick={() => setBoardViewMode("calendar")}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors",
+                  boardViewMode === "calendar"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <CalendarDays className="h-3.5 w-3.5" />
+                Calendar
+              </button>
+            </div>
             <MemberStack members={members} onClick={() => setIsShareOpen(true)} />
             {access.canManage && (
               <Button
@@ -1529,71 +1591,74 @@ export function BoardView({
           </div>
         </header>
 
-        {/* Lists canvas */}
-        <DndContext
-          id="board-dnd-context"
-          sensors={sensors}
-          collisionDetection={closestCorners}
-          onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
-          onDragEnd={handleDragEnd}
-          onDragCancel={handleDragCancel}
-        >
-          <div className="flex flex-1 items-start gap-3 overflow-x-auto p-4">
-            <SortableContext
-              items={lists.map((list) => list.id)}
-              strategy={horizontalListSortingStrategy}
-            >
-              {lists.map((list) => (
-                <BoardListColumn
-                  key={list.id}
-                  list={list}
-                  customFields={customFields}
-                  canEdit={access.canEdit}
-                  isOver={overListId === list.id && activeType === "card"}
-                  cardDraft={cardDrafts[list.id] ?? ""}
-                  mentionedCardIds={mentionedCardIds}
-                  onCardDraftChange={(listId, value) =>
-                    setCardDrafts((current) => ({
-                      ...current,
-                      [listId]: value,
-                    }))
-                  }
-                  onCreateCard={createCard}
-                  onRenameList={renameList}
-                  onDeleteList={deleteList}
-                  onOpenCard={openCard}
+        {boardViewMode === "calendar" ? (
+          <BoardCalendarView lists={lists} onOpenCard={openCard} />
+        ) : (
+          <DndContext
+            id="board-dnd-context"
+            sensors={sensors}
+            collisionDetection={closestCorners}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDragEnd={handleDragEnd}
+            onDragCancel={handleDragCancel}
+          >
+            <div className="flex flex-1 items-start gap-3 overflow-x-auto p-4">
+              <SortableContext
+                items={lists.map((list) => list.id)}
+                strategy={horizontalListSortingStrategy}
+              >
+                {lists.map((list) => (
+                  <BoardListColumn
+                    key={list.id}
+                    list={list}
+                    customFields={customFields}
+                    canEdit={access.canEdit}
+                    isOver={overListId === list.id && activeType === "card"}
+                    cardDraft={cardDrafts[list.id] ?? ""}
+                    mentionedCardIds={mentionedCardIds}
+                    onCardDraftChange={(listId, value) =>
+                      setCardDrafts((current) => ({
+                        ...current,
+                        [listId]: value,
+                      }))
+                    }
+                    onCreateCard={createCard}
+                    onRenameList={renameList}
+                    onDeleteList={deleteList}
+                    onOpenCard={openCard}
+                  />
+                ))}
+              </SortableContext>
+
+              {access.canEdit && (
+                <ListComposer
+                  value={listDraft}
+                  onChange={setListDraft}
+                  onSubmit={createList}
                 />
-              ))}
-            </SortableContext>
+              )}
 
-            {access.canEdit && (
-              <ListComposer
-                value={listDraft}
-                onChange={setListDraft}
-                onSubmit={createList}
-              />
-            )}
+              {lists.length === 0 && !access.canEdit && (
+                <p className="px-2 py-8 text-sm text-muted-foreground">
+                  This board has no lists yet.
+                </p>
+              )}
+            </div>
 
-            {lists.length === 0 && !access.canEdit && (
-              <p className="px-2 py-8 text-sm text-muted-foreground">
-                This board has no lists yet.
-              </p>
-            )}
-          </div>
-
-          <DragOverlay dropAnimation={null}>
-            {activeType === "card" && activeCard ? (
-              <CardSurface
-                card={activeCard}
-                customFields={customFields}
-                className="w-[264px] rotate-2 cursor-grabbing shadow-xl"
-              />
-            ) : activeType === "list" && activeList ? (
-              <ListSurface list={activeList} customFields={customFields} />
-            ) : null}
-          </DragOverlay>
-        </DndContext>
+            <DragOverlay dropAnimation={null}>
+              {activeType === "card" && activeCard ? (
+                <CardSurface
+                  card={activeCard}
+                  customFields={customFields}
+                  className="w-[264px] rotate-2 cursor-grabbing shadow-xl"
+                />
+              ) : activeType === "list" && activeList ? (
+                <ListSurface list={activeList} customFields={customFields} />
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+        )}
       </div>
 
       {/* Share / members dialog */}
@@ -1868,6 +1933,20 @@ export function BoardView({
                       )}
                     </div>
                   </section>
+
+                  <CardDates
+                    boardId={board.id}
+                    cardId={selectedCard.id}
+                    dates={{
+                      startDate: selectedCard.startDate,
+                      dueAt: selectedCard.dueAt,
+                      dueComplete: selectedCard.dueComplete,
+                    }}
+                    canEdit={access.canEdit}
+                    onDatesChange={(dates) =>
+                      updateCardDates(selectedCard.id, dates)
+                    }
+                  />
 
                   <CardCustomFields
                     boardId={board.id}

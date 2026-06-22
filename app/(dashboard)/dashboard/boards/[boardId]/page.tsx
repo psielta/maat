@@ -121,6 +121,43 @@ export default async function BoardPage({ params }: BoardPageProps) {
     notFound()
   }
 
+  const boardLinks = await db.boardCardLink.findMany({
+    where: {
+      OR: [
+        {
+          cardA: {
+            list: {
+              boardId,
+            },
+          },
+        },
+        {
+          cardB: {
+            list: {
+              boardId,
+            },
+          },
+        },
+      ],
+    },
+    select: {
+      cardAId: true,
+      cardBId: true,
+    },
+  })
+
+  const linkedCountByCardId = new Map<string, number>()
+  for (const link of boardLinks) {
+    linkedCountByCardId.set(
+      link.cardAId,
+      (linkedCountByCardId.get(link.cardAId) ?? 0) + 1
+    )
+    linkedCountByCardId.set(
+      link.cardBId,
+      (linkedCountByCardId.get(link.cardBId) ?? 0) + 1
+    )
+  }
+
   const boards = await db.board.findMany({
     where: {
       OR: [
@@ -158,6 +195,7 @@ export default async function BoardPage({ params }: BoardPageProps) {
       cards: list.cards.map((card) => ({
         ...card,
         ...serializeCardDates(card),
+        linkedCount: linkedCountByCardId.get(card.id) ?? 0,
         customFieldValues: card.customFieldValues.map(serializeCustomFieldValueRow),
         labels: serializeCardLabels(card.labels),
         checklists: serializeCardChecklists(card.checklists),

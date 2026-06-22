@@ -87,10 +87,20 @@ const cardDueAtSchema = z
     }
   })
 
+export const boardCardTypeSchema = z.enum([
+  "DEFAULT",
+  "TASK",
+  "BUG",
+  "FEATURE",
+  "EPIC",
+])
+
 export const boardCardPatchSchema = z
   .object({
     title: z.string().trim().min(1).max(140).optional(),
     description: z.string().trim().max(50000).optional().nullable(),
+    cardType: boardCardTypeSchema.optional(),
+    isTemplate: z.boolean().optional(),
     startDate: cardDateOnlySchema.nullable().optional(),
     dueAt: cardDueAtSchema.nullable().optional(),
     dueComplete: z.boolean().optional(),
@@ -100,6 +110,8 @@ export const boardCardPatchSchema = z
     (data) =>
       data.title !== undefined ||
       data.description !== undefined ||
+      data.cardType !== undefined ||
+      data.isTemplate !== undefined ||
       data.startDate !== undefined ||
       data.dueAt !== undefined ||
       data.dueComplete !== undefined ||
@@ -334,4 +346,13 @@ export const checklistItemPatchSchema = z
 
 export const checklistItemReorderSchema = z.object({
   itemIds: z.array(z.string().min(1)),
+})
+
+export const cardFromTemplateSchema = z.object({
+  listId: z.string().min(1),
+  title: z.string().trim().min(1).max(140).optional(),
+})
+
+export const cardLinkCreateSchema = z.object({
+  targetCardId: z.string().min(1),
 })

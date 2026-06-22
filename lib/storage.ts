@@ -1,4 +1,5 @@
 import {
+  CopyObjectCommand,
   CreateBucketCommand,
   DeleteObjectCommand,
   GetObjectCommand,
@@ -108,6 +109,18 @@ export async function deleteObject(key: string) {
     new DeleteObjectCommand({
       Bucket: env.S3_BUCKET,
       Key: key,
+    })
+  )
+}
+
+export async function copyObject(sourceKey: string, destinationKey: string) {
+  await ensureBucketExists()
+
+  await getS3Client().send(
+    new CopyObjectCommand({
+      Bucket: env.S3_BUCKET,
+      CopySource: `${env.S3_BUCKET}/${sourceKey}`,
+      Key: destinationKey,
     })
   )
 }

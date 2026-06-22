@@ -147,6 +147,15 @@ export async function PATCH(req: Request, context: RouteContext) {
       return new Response(null, { status: 204 })
     }
 
+    if (body.isTemplate !== undefined) {
+      if (body.isTemplate && existing.archivedAt) {
+        return Response.json(
+          { message: "Archived cards cannot be marked as templates." },
+          { status: 400 }
+        )
+      }
+    }
+
     if (body.archived === false) {
       const nextOrder = await getNextCardOrder(existing.listId)
 
@@ -195,6 +204,12 @@ export async function PATCH(req: Request, context: RouteContext) {
       data: {
         title: body.title,
         description: body.description,
+        ...(body.cardType !== undefined && {
+          cardType: body.cardType,
+        }),
+        ...(body.isTemplate !== undefined && {
+          isTemplate: body.isTemplate,
+        }),
         ...(body.startDate !== undefined && {
           startDate: parseStartDate(body.startDate),
         }),

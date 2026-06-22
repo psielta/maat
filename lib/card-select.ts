@@ -3,6 +3,8 @@ export const cardSelect = {
   displayId: true,
   title: true,
   description: true,
+  cardType: true,
+  isTemplate: true,
   startDate: true,
   dueAt: true,
   dueComplete: true,

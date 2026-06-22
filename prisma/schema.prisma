@@ -58,6 +58,7 @@ model User {
   boardEvents      BoardEvent[]
   cardComments     BoardCardComment[]
   cardAttachments  BoardCardAttachment[]
+  cardLinksCreated BoardCardLink[]
   notifications      Notification[] @relation("NotificationUser")
   actedNotifications Notification[] @relation("NotificationActor")
 
@@ -133,16 +134,26 @@ model BoardList {
   @@map(name: "board_lists")
 }
 
+enum BoardCardType {
+  DEFAULT
+  TASK
+  BUG
+  FEATURE
+  EPIC
+}
+
 model BoardCard {
-  id          String    @id @default(cuid())
-  displayId   String?   @map(name: "display_id")
+  id          String         @id @default(cuid())
+  displayId   String?        @map(name: "display_id")
   title       String
-  description String?   @db.Text
-  startDate   DateTime? @db.Date @map(name: "start_date")
-  dueAt       DateTime? @map(name: "due_at")
-  dueComplete Boolean   @default(false) @map(name: "due_complete")
-  order       Int       @default(0) @map(name: "sort_order")
-  archivedAt  DateTime? @map(name: "archived_at")
+  description String?        @db.Text
+  cardType    BoardCardType  @default(DEFAULT) @map(name: "card_type")
+  isTemplate  Boolean        @default(false) @map(name: "is_template")
+  startDate   DateTime?      @db.Date @map(name: "start_date")
+  dueAt       DateTime?      @map(name: "due_at")
+  dueComplete Boolean        @default(false) @map(name: "due_complete")
+  order       Int            @default(0) @map(name: "sort_order")
+  archivedAt  DateTime?      @map(name: "archived_at")
   createdAt   DateTime  @default(now()) @map(name: "created_at")
   updatedAt   DateTime  @updatedAt @map(name: "updated_at")
   listId      String    @map(name: "list_id")
@@ -153,9 +164,12 @@ model BoardCard {
   customFieldValues BoardCardCustomFieldValue[]
   labels            BoardCardLabel[]
   checklists        BoardCardChecklist[]
+  linksAsA          BoardCardLink[] @relation("CardLinkA")
+  linksAsB          BoardCardLink[] @relation("CardLinkB")
 
   @@index([listId])
   @@index([listId, archivedAt])
+  @@index([listId, isTemplate])
   @@index([displayId])
   @@index([dueAt])
   @@map(name: "board_cards")
@@ -362,6 +376,22 @@ model BoardCardChecklistItem {
 
   @@index([checklistId])
   @@map(name: "board_card_checklist_items")
+}
+
+model BoardCardLink {
+  id          String   @id @default(cuid())
+  cardAId     String   @map(name: "card_a_id")
+  cardBId     String   @map(name: "card_b_id")
+  createdAt   DateTime @default(now()) @map(name: "created_at")
+  createdById String   @map(name: "created_by_id")
+
+  cardA     BoardCard @relation("CardLinkA", fields: [cardAId], references: [id], onDelete: Cascade)
+  cardB     BoardCard @relation("CardLinkB", fields: [cardBId], references: [id], onDelete: Cascade)
+  createdBy User      @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@unique([cardAId, cardBId])
+  @@index([cardBId])
+  @@map(name: "board_card_links")
 }
 
 model BoardEvent {

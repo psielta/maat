@@ -83,6 +83,15 @@ import { CardChecklistBadge } from "@/components/card-checklist-badge"
 import { CardChecklists } from "@/components/card-checklists"
 import { CardDateBadge } from "@/components/card-date-badge"
 import { CardDates } from "@/components/card-dates"
+import { CardLinkBadge } from "@/components/card-link-badge"
+import { CardLinks } from "@/components/card-links"
+import {
+  CardTemplateActions,
+  CreateFromTemplateMenu,
+} from "@/components/card-template-actions"
+import { CardTypeBadge } from "@/components/card-type-badge"
+import { CardTypePicker } from "@/components/card-type-picker"
+import type { BoardCardTypeValue } from "@/lib/card-type-display"
 import { CustomFieldBadges } from "@/components/custom-field-badges"
 import type { CardDatesModel } from "@/lib/card-dates"
 import type { ChecklistModel } from "@/lib/checklist-display"
@@ -108,6 +117,9 @@ export type BoardCardModel = {
   displayId: string | null
   title: string
   description: string | null
+  cardType: BoardCardTypeValue
+  isTemplate: boolean
+  linkedCount: number
   startDate: string | null
   dueAt: string | null
   dueComplete: boolean
@@ -163,6 +175,9 @@ function initialsFor(member: BoardMemberModel) {
 function normalizeCard(card: BoardCardModel): BoardCardModel {
   return {
     ...card,
+    cardType: card.cardType ?? "DEFAULT",
+    isTemplate: card.isTemplate ?? false,
+    linkedCount: card.linkedCount ?? 0,
     startDate: card.startDate ?? null,
     dueAt: card.dueAt ?? null,
     dueComplete: card.dueComplete ?? false,
@@ -245,12 +260,20 @@ function CardSurface({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-lg border border-black/5 bg-card text-card-foreground shadow-sm dark:border-white/10",
+        "overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm",
+        card.isTemplate
+          ? "border-dashed border-primary/30 bg-muted/40 dark:border-primary/40"
+          : "border-black/5 dark:border-white/10",
         className
       )}
     >
       <CardLabelStrips labels={card.labels} />
       <div className="p-3 pt-2">
+      {card.isTemplate ? (
+        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+          Template
+        </p>
+      ) : null}
       {card.displayId && <CardDisplayId displayId={card.displayId} />}
       <p className="break-words text-sm font-medium leading-snug">
         {card.title}
@@ -260,8 +283,10 @@ function CardSurface({
         values={card.customFieldValues}
       />
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        <CardTypeBadge cardType={card.cardType} />
         <CardDateBadge dates={card} className="mt-0" />
         <CardChecklistBadge checklists={card.checklists} />
+        <CardLinkBadge linkedCount={card.linkedCount} />
       </div>
       {card.description && (
         <div className="mt-2 flex items-center gap-1.5 text-muted-foreground">
@@ -308,7 +333,10 @@ function SortableCard({
       }}
       onClick={() => onOpen(card)}
       className={cn(
-        "group relative overflow-hidden rounded-lg border border-black/5 bg-card text-card-foreground shadow-sm transition-shadow dark:border-white/10",
+        "group relative overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm transition-shadow",
+        card.isTemplate
+          ? "border-dashed border-primary/30 bg-muted/40 dark:border-primary/40"
+          : "border-black/5 dark:border-white/10",
         "hover:border-primary/40 hover:shadow-md",
         hasUnreadMention && "mention-alert-card",
         canEdit && "cursor-grab active:cursor-grabbing",
@@ -327,6 +355,11 @@ function SortableCard({
       )}
       <CardLabelStrips labels={card.labels} />
       <div className="p-3 pt-2">
+        {card.isTemplate ? (
+          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+            Template
+          </p>
+        ) : null}
         {card.displayId && <CardDisplayId displayId={card.displayId} />}
         <p className="break-words text-sm font-medium leading-snug">
           {card.title}
@@ -336,8 +369,10 @@ function SortableCard({
           values={card.customFieldValues}
         />
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <CardTypeBadge cardType={card.cardType} />
           <CardDateBadge dates={card} className="mt-0" />
           <CardChecklistBadge checklists={card.checklists} />
+          <CardLinkBadge linkedCount={card.linkedCount} />
         </div>
         {card.description && (
           <div className="mt-2 flex items-center gap-1.5 text-muted-foreground">
@@ -430,6 +465,7 @@ function CardComposer({
 }
 
 function BoardListColumn({
+  boardId,
   list,
   customFields,
   canEdit,
@@ -438,10 +474,12 @@ function BoardListColumn({
   mentionedCardIds,
   onCardDraftChange,
   onCreateCard,
+  onTemplateCardCreated,
   onRenameList,
   onArchiveList,
   onOpenCard,
 }: {
+  boardId: string
   list: BoardListModel
   customFields: CustomFieldDefinitionModel[]
   canEdit: boolean
@@ -450,6 +488,7 @@ function BoardListColumn({
   mentionedCardIds: Set<string>
   onCardDraftChange: (listId: string, value: string) => void
   onCreateCard: (listId: string) => void
+  onTemplateCardCreated: (card: BoardCardModel, listId: string) => void
   onRenameList: (listId: string, title: string) => void
   onArchiveList: (listId: string) => void
   onOpenCard: (card: BoardCardModel) => void
@@ -587,11 +626,17 @@ function BoardListColumn({
       </div>
 
       {canEdit && (
-        <div className="p-2 pt-0">
+        <div className="space-y-1 p-2 pt-0">
           <CardComposer
             value={cardDraft}
             onChange={(value) => onCardDraftChange(list.id, value)}
             onSubmit={() => onCreateCard(list.id)}
+          />
+          <CreateFromTemplateMenu
+            boardId={boardId}
+            listId={list.id}
+            canEdit={canEdit}
+            onCardCreated={(card) => onTemplateCardCreated(card, list.id)}
           />
         </div>
       )}
@@ -923,6 +968,82 @@ export function BoardView({
       current?.id === cardId ? { ...current, labels: nextLabels } : current
     )
   }
+
+  function updateCardType(cardId: string, cardType: BoardCardTypeValue) {
+    setLists((current) =>
+      current.map((list) => ({
+        ...list,
+        cards: list.cards.map((card) =>
+          card.id === cardId ? { ...card, cardType } : card
+        ),
+      }))
+    )
+    setSelectedCard((current) =>
+      current?.id === cardId ? { ...current, cardType } : current
+    )
+  }
+
+  function updateCardModel(cardId: string, patch: Partial<BoardCardModel>) {
+    setLists((current) =>
+      current.map((list) => ({
+        ...list,
+        cards: list.cards.map((card) =>
+          card.id === cardId ? { ...card, ...patch } : card
+        ),
+      }))
+    )
+    setSelectedCard((current) =>
+      current?.id === cardId ? { ...current, ...patch } : current
+    )
+  }
+
+  function adjustLinkedCount(cardId: string, delta: number) {
+    setLists((current) =>
+      current.map((list) => ({
+        ...list,
+        cards: list.cards.map((card) =>
+          card.id === cardId
+            ? {
+                ...card,
+                linkedCount: Math.max(0, card.linkedCount + delta),
+              }
+            : card
+        ),
+      }))
+    )
+    setSelectedCard((current) =>
+      current?.id === cardId
+        ? {
+            ...current,
+            linkedCount: Math.max(0, current.linkedCount + delta),
+          }
+        : current
+    )
+  }
+
+  function insertCreatedCard(card: BoardCardModel, listId: string) {
+    const normalized = normalizeCard(card)
+    setLists((current) =>
+      normalizeLists(
+        current.map((list) =>
+          list.id === listId
+            ? { ...list, cards: [...list.cards, normalized] }
+            : list
+        )
+      )
+    )
+  }
+
+  const allBoardCards = React.useMemo(
+    () => lists.flatMap((list) => list.cards),
+    [lists]
+  )
+
+  const listTitlesById = React.useMemo(
+    () =>
+      Object.fromEntries(lists.map((list) => [list.id, list.title] as const)),
+    [lists]
+  )
 
   function updateCardChecklists(
     cardId: string,
@@ -1338,6 +1459,9 @@ export function BoardView({
 
     const card = normalizeCard({
       ...(await response.json()),
+      cardType: "DEFAULT",
+      isTemplate: false,
+      linkedCount: 0,
       customFieldValues: [] as CustomFieldClientValue[],
       labels: [],
       checklists: [],
@@ -1722,6 +1846,7 @@ export function BoardView({
                 {lists.map((list) => (
                   <BoardListColumn
                     key={list.id}
+                    boardId={board.id}
                     list={list}
                     customFields={customFields}
                     canEdit={access.canEdit}
@@ -1735,6 +1860,10 @@ export function BoardView({
                       }))
                     }
                     onCreateCard={createCard}
+                    onTemplateCardCreated={(card, listId) => {
+                      insertCreatedCard(card, listId)
+                      router.refresh()
+                    }}
                     onRenameList={renameList}
                     onArchiveList={archiveList}
                     onOpenCard={openCard}
@@ -2019,6 +2148,33 @@ export function BoardView({
                     className="h-auto border-none px-0 text-xl font-semibold shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:cursor-default disabled:opacity-100"
                   />
 
+                  <CardTemplateActions
+                    boardId={board.id}
+                    card={selectedCard}
+                    lists={lists}
+                    canEdit={access.canEdit}
+                    onCardUpdated={(card) =>
+                      updateCardModel(card.id, {
+                        isTemplate: card.isTemplate,
+                        cardType: card.cardType,
+                      })
+                    }
+                    onCardCreated={(card, listId) => {
+                      insertCreatedCard(card, listId)
+                      router.refresh()
+                    }}
+                  />
+
+                  <CardTypePicker
+                    boardId={board.id}
+                    cardId={selectedCard.id}
+                    cardType={selectedCard.cardType}
+                    canEdit={access.canEdit}
+                    onCardTypeChange={(cardType) =>
+                      updateCardType(selectedCard.id, cardType)
+                    }
+                  />
+
                   <section>
                     <div className="mb-2 flex items-center gap-2">
                       <AlignLeft className="h-4 w-4 text-muted-foreground" />
@@ -2098,6 +2254,16 @@ export function BoardView({
                     onChecklistsChange={(next) =>
                       updateCardChecklists(selectedCard.id, next)
                     }
+                  />
+
+                  <CardLinks
+                    boardId={board.id}
+                    cardId={selectedCard.id}
+                    boardCards={allBoardCards}
+                    listTitlesById={listTitlesById}
+                    canEdit={access.canEdit}
+                    onOpenCard={openCard}
+                    onLinkedCountDelta={adjustLinkedCount}
                   />
 
                   <CardCustomFields

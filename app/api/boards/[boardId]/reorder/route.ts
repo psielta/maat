@@ -37,6 +37,7 @@ export async function PATCH(req: Request, context: RouteContext) {
     const currentLists = await db.boardList.findMany({
       where: {
         boardId: params.boardId,
+        archivedAt: null,
       },
       select: {
         id: true,

@@ -1,7 +1,7 @@
 import * as z from "zod"
 
 import { getCurrentUserId, userCanReadBoard } from "@/lib/board-access"
-import { serializeArchivedCard } from "@/lib/card-archive"
+import { serializeArchivedList } from "@/lib/list-archive"
 import { db } from "@/lib/db"
 
 const routeContextSchema = z.object({
@@ -31,25 +31,24 @@ export async function GET(_req: Request, context: RouteContext) {
       return new Response(null, { status: 404 })
     }
 
-    const cards = await db.boardCard.findMany({
+    const lists = await db.boardList.findMany({
       where: {
+        boardId: params.boardId,
         archivedAt: {
           not: null,
-        },
-        list: {
-          boardId: params.boardId,
-          archivedAt: null,
         },
       },
       select: {
         id: true,
         title: true,
-        displayId: true,
         archivedAt: true,
-        listId: true,
-        list: {
+        _count: {
           select: {
-            title: true,
+            cards: {
+              where: {
+                archivedAt: null,
+              },
+            },
           },
         },
       },
@@ -58,7 +57,7 @@ export async function GET(_req: Request, context: RouteContext) {
       },
     })
 
-    return Response.json(cards.map(serializeArchivedCard))
+    return Response.json(lists.map(serializeArchivedList))
   } catch (error) {
     if (error instanceof z.ZodError) {
       return Response.json(error.issues, { status: 422 })

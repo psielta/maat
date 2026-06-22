@@ -37,6 +37,7 @@ export async function POST(req: Request, context: RouteContext) {
     const lastList = await db.boardList.findFirst({
       where: {
         boardId: params.boardId,
+        archivedAt: null,
       },
       orderBy: {
         order: "desc",

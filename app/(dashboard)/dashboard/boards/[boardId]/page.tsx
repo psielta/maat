@@ -84,6 +84,9 @@ export default async function BoardPage({ params }: BoardPageProps) {
         ],
       },
       lists: {
+        where: {
+          archivedAt: null,
+        },
         select: {
           id: true,
           title: true,

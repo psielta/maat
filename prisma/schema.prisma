@@ -117,17 +117,19 @@ model BoardMember {
 }
 
 model BoardList {
-  id        String      @id @default(cuid())
-  title     String
-  order     Int         @default(0) @map(name: "sort_order")
-  createdAt DateTime    @default(now()) @map(name: "created_at")
-  updatedAt DateTime    @updatedAt @map(name: "updated_at")
-  boardId   String      @map(name: "board_id")
-  cards     BoardCard[]
+  id         String      @id @default(cuid())
+  title      String
+  order      Int         @default(0) @map(name: "sort_order")
+  archivedAt DateTime?   @map(name: "archived_at")
+  createdAt  DateTime    @default(now()) @map(name: "created_at")
+  updatedAt  DateTime    @updatedAt @map(name: "updated_at")
+  boardId    String      @map(name: "board_id")
+  cards      BoardCard[]
 
   board Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
 
   @@index([boardId])
+  @@index([boardId, archivedAt])
   @@map(name: "board_lists")
 }
 

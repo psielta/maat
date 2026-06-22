@@ -42,9 +42,17 @@ export const boardListCreateSchema = z.object({
   title: z.string().trim().min(1).max(80),
 })
 
-export const boardListPatchSchema = z.object({
-  title: z.string().trim().min(1).max(80),
-})
+export const boardListPatchSchema = z
+  .object({
+    title: z.string().trim().min(1).max(80).optional(),
+    archived: z.boolean().optional(),
+  })
+  .refine(
+    (data) => data.title !== undefined || data.archived !== undefined,
+    {
+      message: "At least one field must be provided.",
+    }
+  )
 
 // `description` holds serialized rich-text (Lexical) editor state, so the
 // limit is generous compared to a plain-text field.

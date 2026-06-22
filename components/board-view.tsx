@@ -74,7 +74,7 @@ import { BoardCustomFieldsManager } from "@/components/board-custom-fields-manag
 import { CardAttachments } from "@/components/card-attachments"
 import { CardComments } from "@/components/card-comments"
 import { BoardCalendarView } from "@/components/board-calendar-view"
-import { BoardArchivedCards } from "@/components/board-archived-cards"
+import { BoardArchivedItems } from "@/components/board-archived-items"
 import { BoardLabelsManager } from "@/components/board-labels-manager"
 import { CardCustomFields } from "@/components/card-custom-fields"
 import { CardLabelStrips } from "@/components/card-label-strips"
@@ -439,7 +439,7 @@ function BoardListColumn({
   onCardDraftChange,
   onCreateCard,
   onRenameList,
-  onDeleteList,
+  onArchiveList,
   onOpenCard,
 }: {
   list: BoardListModel
@@ -451,7 +451,7 @@ function BoardListColumn({
   onCardDraftChange: (listId: string, value: string) => void
   onCreateCard: (listId: string) => void
   onRenameList: (listId: string, title: string) => void
-  onDeleteList: (listId: string) => void
+  onArchiveList: (listId: string) => void
   onOpenCard: (card: BoardCardModel) => void
 }) {
   const {
@@ -556,12 +556,9 @@ function BoardListColumn({
                 Rename list
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
-                onSelect={() => onDeleteList(list.id)}
-              >
-                <Icons.trash className="mr-2 h-4 w-4" />
-                Delete list
+              <DropdownMenuItem onSelect={() => onArchiveList(list.id)}>
+                <Archive className="mr-2 h-4 w-4" />
+                Archive list
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -1286,27 +1283,31 @@ export function BoardView({
     router.refresh()
   }
 
-  async function deleteList(listId: string) {
+  async function archiveList(listId: string) {
     if (!access.canEdit) return
-    if (!window.confirm("Delete this list and all cards in it?")) return
 
     const previousLists = lists
     setLists((current) => current.filter((list) => list.id !== listId))
 
     const response = await fetch(`/api/boards/${board.id}/lists/${listId}`, {
-      method: "DELETE",
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ archived: true }),
     })
 
     if (!response.ok) {
       setLists(previousLists)
       return toast({
         title: "Something went wrong.",
-        description: "Your list was not deleted. Please try again.",
+        description: "Your list was not archived. Please try again.",
         variant: "destructive",
       })
     }
 
     router.refresh()
+    toast({ description: "List archived." })
   }
 
   async function createCard(listId: string) {
@@ -1655,7 +1656,7 @@ export function BoardView({
                   {access.canRead && (
                     <DropdownMenuItem onSelect={() => setIsArchivedOpen(true)}>
                       <Archive className="mr-2 h-4 w-4" />
-                      Archived cards
+                      Archived items
                     </DropdownMenuItem>
                   )}
                   {access.canEdit && (
@@ -1735,7 +1736,7 @@ export function BoardView({
                     }
                     onCreateCard={createCard}
                     onRenameList={renameList}
-                    onDeleteList={deleteList}
+                    onArchiveList={archiveList}
                     onOpenCard={openCard}
                   />
                 ))}
@@ -1877,7 +1878,7 @@ export function BoardView({
         onFieldsChange={setCustomFields}
       />
 
-      <BoardArchivedCards
+      <BoardArchivedItems
         boardId={board.id}
         open={isArchivedOpen}
         onOpenChange={setIsArchivedOpen}

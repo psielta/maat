@@ -32,26 +32,52 @@ import {
   Kanban,
   ListChecks,
   MessageSquare,
-  Tags,
   MoreHorizontal,
   Pencil,
+  Shapes,
+  Tags,
   UserPlus,
   X,
 } from "lucide-react"
 
+import { getMentionableUsers } from "@/lib/board-mentionable-users"
+import type { CardDatesModel } from "@/lib/card-dates"
 import {
   CARD_ID_PATTERN_TOKENS,
   previewCardDisplayId,
 } from "@/lib/card-id-pattern"
+import {
+  BOARD_CARD_TYPES,
+  getCardTypeMeta,
+  type BoardCardTypeValue,
+} from "@/lib/card-type-display"
+import type { ChecklistModel } from "@/lib/checklist-display"
+import type { CustomFieldDefinitionModel } from "@/lib/custom-field-display"
+import type { CustomFieldClientValue } from "@/lib/custom-field-values"
 import { m } from "@/lib/i18n"
+import {
+  isInlineImageLightboxOpen,
+  preventCardDialogDismissOnLightbox,
+} from "@/lib/inline-image-lightbox-state"
+import { getLabelDisplayName, type BoardLabelModel } from "@/lib/label-display"
 import { lexicalToPlainText } from "@/lib/lexical-text"
 import { cn } from "@/lib/utils"
+import { useBoardMentionAlerts } from "@/hooks/use-board-mention-alerts"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
+  ContextMenu,
+  ContextMenuCheckboxItem,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuRadioGroup,
+  ContextMenuRadioItem,
+  ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu"
 import {
   Dialog,
   DialogContent,
@@ -70,20 +96,20 @@ import {
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/components/ui/use-toast"
-import { BoardSwitcher, type BoardSummary } from "@/components/board-switcher"
-import { BoardCustomFieldsManager } from "@/components/board-custom-fields-manager"
-import { CardAttachments } from "@/components/card-attachments"
-import { CardComments } from "@/components/card-comments"
-import { BoardCalendarView } from "@/components/board-calendar-view"
 import { BoardArchivedItems } from "@/components/board-archived-items"
+import { BoardCalendarView } from "@/components/board-calendar-view"
+import { BoardCustomFieldsManager } from "@/components/board-custom-fields-manager"
 import { BoardLabelsManager } from "@/components/board-labels-manager"
-import { CardCustomFields } from "@/components/card-custom-fields"
-import { CardLabelStrips } from "@/components/card-label-strips"
-import { CardLabels } from "@/components/card-labels"
+import { BoardSwitcher, type BoardSummary } from "@/components/board-switcher"
+import { CardAttachments } from "@/components/card-attachments"
 import { CardChecklistBadge } from "@/components/card-checklist-badge"
 import { CardChecklists } from "@/components/card-checklists"
+import { CardComments } from "@/components/card-comments"
+import { CardCustomFields } from "@/components/card-custom-fields"
 import { CardDateBadge } from "@/components/card-date-badge"
 import { CardDates } from "@/components/card-dates"
+import { CardLabelStrips } from "@/components/card-label-strips"
+import { CardLabels } from "@/components/card-labels"
 import { CardLinkBadge } from "@/components/card-link-badge"
 import { CardLinks } from "@/components/card-links"
 import {
@@ -92,26 +118,14 @@ import {
 } from "@/components/card-template-actions"
 import { CardTypeBadge } from "@/components/card-type-badge"
 import { CardTypePicker } from "@/components/card-type-picker"
-import type { BoardCardTypeValue } from "@/lib/card-type-display"
 import { CustomFieldBadges } from "@/components/custom-field-badges"
-import type { CardDatesModel } from "@/lib/card-dates"
-import type { ChecklistModel } from "@/lib/checklist-display"
-import type { BoardLabelModel } from "@/lib/label-display"
-import type { CustomFieldDefinitionModel } from "@/lib/custom-field-display"
-import type { CustomFieldClientValue } from "@/lib/custom-field-values"
-import { getMentionableUsers } from "@/lib/board-mentionable-users"
-import { Icons } from "@/components/icons"
 import { DashboardHeaderActions } from "@/components/dashboard-header-actions"
-import { RichTextEditor } from "@/components/rich-text-editor"
-import { useBoardMentionAlerts } from "@/hooks/use-board-mention-alerts"
+import { Icons } from "@/components/icons"
 import {
   InlineImageLightboxHost,
   InlineImageLightboxProvider,
 } from "@/components/lexical/inline-image-lightbox-context"
-import {
-  isInlineImageLightboxOpen,
-  preventCardDialogDismissOnLightbox,
-} from "@/lib/inline-image-lightbox-state"
+import { RichTextEditor } from "@/components/rich-text-editor"
 
 export type BoardCardModel = {
   id: string
@@ -288,92 +302,6 @@ function CardSurface({
     >
       <CardLabelStrips labels={card.labels} />
       <div className="p-3 pt-2">
-      {card.isTemplate ? (
-        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
-          {msg.card.template}
-        </p>
-      ) : null}
-      {card.displayId && <CardDisplayId displayId={card.displayId} />}
-      <p className="break-words text-sm font-medium leading-snug">
-        {card.title}
-      </p>
-      <CustomFieldBadges
-        fields={customFields}
-        values={card.customFieldValues}
-      />
-      <div className="mt-2 flex flex-wrap items-center gap-1.5">
-        <CardTypeBadge cardType={card.cardType} />
-        <CardDateBadge dates={card} className="mt-0" />
-        <CardChecklistBadge checklists={card.checklists} />
-        <CardLinkBadge linkedCount={card.linkedCount} />
-      </div>
-      {card.description && (
-        <div className="mt-2 flex items-center gap-1.5 text-muted-foreground">
-          <AlignLeft className="h-3.5 w-3.5 shrink-0" />
-        </div>
-      )}
-      </div>
-    </div>
-  )
-}
-
-function SortableCard({
-  card,
-  customFields,
-  canEdit,
-  hasUnreadMention,
-  onOpen,
-}: {
-  card: BoardCardModel
-  customFields: CustomFieldDefinitionModel[]
-  canEdit: boolean
-  hasUnreadMention: boolean
-  onOpen: (card: BoardCardModel) => void
-}) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id: card.id,
-    data: { type: "card" },
-    disabled: !canEdit,
-  })
-
-  return (
-    <article
-      ref={setNodeRef}
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition,
-      }}
-      onClick={() => onOpen(card)}
-      className={cn(
-        "group relative overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm transition-shadow",
-        card.isTemplate
-          ? "border-dashed border-primary/30 bg-muted/40 dark:border-primary/40"
-          : "border-black/5 dark:border-white/10",
-        "hover:border-primary/40 hover:shadow-md",
-        hasUnreadMention && "mention-alert-card",
-        canEdit && "cursor-grab active:cursor-grabbing",
-        isDragging && "opacity-40"
-      )}
-      {...(canEdit ? attributes : {})}
-      {...(canEdit ? listeners : {})}
-    >
-      {hasUnreadMention && (
-        <span
-          className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-sm"
-          aria-label={msg.card.mentioned}
-        >
-          <Bell className="h-3 w-3" />
-        </span>
-      )}
-      <CardLabelStrips labels={card.labels} />
-      <div className="p-3 pt-2">
         {card.isTemplate ? (
           <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
             {msg.card.template}
@@ -396,13 +324,200 @@ function SortableCard({
         {card.description && (
           <div className="mt-2 flex items-center gap-1.5 text-muted-foreground">
             <AlignLeft className="h-3.5 w-3.5 shrink-0" />
-            <span className="line-clamp-1 text-xs leading-4">
-              {lexicalToPlainText(card.description)}
-            </span>
           </div>
         )}
       </div>
-    </article>
+    </div>
+  )
+}
+
+function SortableCard({
+  card,
+  customFields,
+  boardLabels,
+  canEdit,
+  hasUnreadMention,
+  onOpen,
+  onArchive,
+  onCardTypeChange,
+  onCardLabelsChange,
+  onEditLabels,
+}: {
+  card: BoardCardModel
+  customFields: CustomFieldDefinitionModel[]
+  boardLabels: BoardLabelModel[]
+  canEdit: boolean
+  hasUnreadMention: boolean
+  onOpen: (card: BoardCardModel) => void
+  onArchive: (card: BoardCardModel) => void
+  onCardTypeChange: (card: BoardCardModel, cardType: BoardCardTypeValue) => void
+  onCardLabelsChange: (card: BoardCardModel, labels: BoardLabelModel[]) => void
+  onEditLabels?: () => void
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: card.id,
+    data: { type: "card" },
+    disabled: !canEdit,
+  })
+
+  const selectedLabelIds = new Set(card.labels.map((label) => label.id))
+
+  function toggleLabel(label: BoardLabelModel) {
+    const nextLabels = selectedLabelIds.has(label.id)
+      ? card.labels.filter((currentLabel) => currentLabel.id !== label.id)
+      : [...card.labels, label].sort((left, right) => left.order - right.order)
+
+    onCardLabelsChange(card, nextLabels)
+  }
+
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <article
+          ref={setNodeRef}
+          style={{
+            transform: CSS.Transform.toString(transform),
+            transition,
+          }}
+          onClick={() => onOpen(card)}
+          className={cn(
+            "group relative shrink-0 overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm transition-shadow",
+            card.isTemplate
+              ? "border-dashed border-primary/30 bg-muted/40 dark:border-primary/40"
+              : "border-black/5 dark:border-white/10",
+            "hover:border-primary/40 hover:shadow-md",
+            hasUnreadMention && "mention-alert-card",
+            canEdit && "cursor-grab active:cursor-grabbing",
+            isDragging && "opacity-40"
+          )}
+          {...(canEdit ? attributes : {})}
+          {...(canEdit ? listeners : {})}
+        >
+          {hasUnreadMention && (
+            <span
+              className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-sm"
+              aria-label={msg.card.mentioned}
+            >
+              <Bell className="h-3 w-3" />
+            </span>
+          )}
+          <CardLabelStrips labels={card.labels} />
+          <div className="p-3 pt-2">
+            {card.isTemplate ? (
+              <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                {msg.card.template}
+              </p>
+            ) : null}
+            {card.displayId && <CardDisplayId displayId={card.displayId} />}
+            <p className="break-words text-sm font-medium leading-snug">
+              {card.title}
+            </p>
+            <CustomFieldBadges
+              fields={customFields}
+              values={card.customFieldValues}
+            />
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              <CardTypeBadge cardType={card.cardType} />
+              <CardDateBadge dates={card} className="mt-0" />
+              <CardChecklistBadge checklists={card.checklists} />
+              <CardLinkBadge linkedCount={card.linkedCount} />
+            </div>
+            {card.description && (
+              <div className="mt-2 flex items-center gap-1.5 text-muted-foreground">
+                <AlignLeft className="h-3.5 w-3.5 shrink-0" />
+                <span className="line-clamp-1 text-xs leading-4">
+                  {lexicalToPlainText(card.description)}
+                </span>
+              </div>
+            )}
+          </div>
+        </article>
+      </ContextMenuTrigger>
+      <ContextMenuContent className="w-56">
+        <ContextMenuItem onSelect={() => onOpen(card)}>
+          <Pencil className="mr-2 h-4 w-4" />
+          {msg.card.details}
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuSub>
+          <ContextMenuSubTrigger disabled={!canEdit}>
+            <Shapes className="mr-2 h-4 w-4" />
+            {msg.card.type}
+          </ContextMenuSubTrigger>
+          <ContextMenuSubContent className="w-48">
+            <ContextMenuRadioGroup
+              value={card.cardType}
+              onValueChange={(value) => {
+                onCardTypeChange(card, value as BoardCardTypeValue)
+              }}
+            >
+              {BOARD_CARD_TYPES.map((type) => {
+                const meta = getCardTypeMeta(type)
+                const Icon = meta.icon
+
+                return (
+                  <ContextMenuRadioItem key={type} value={type}>
+                    {Icon ? <Icon className="mr-2 h-4 w-4" /> : null}
+                    {meta.label}
+                  </ContextMenuRadioItem>
+                )
+              })}
+            </ContextMenuRadioGroup>
+          </ContextMenuSubContent>
+        </ContextMenuSub>
+        <ContextMenuSub>
+          <ContextMenuSubTrigger disabled={!canEdit}>
+            <Tags className="mr-2 h-4 w-4" />
+            {msg.card.labels}
+          </ContextMenuSubTrigger>
+          <ContextMenuSubContent className="w-56">
+            {boardLabels.length === 0 ? (
+              <ContextMenuItem disabled>
+                {msg.card.noLabelsOnBoard}
+              </ContextMenuItem>
+            ) : (
+              boardLabels.map((label) => (
+                <ContextMenuCheckboxItem
+                  key={label.id}
+                  checked={selectedLabelIds.has(label.id)}
+                  onSelect={(event) => {
+                    event.preventDefault()
+                    toggleLabel(label)
+                  }}
+                >
+                  <span
+                    className="mr-2 h-3 w-3 rounded-sm"
+                    style={{ backgroundColor: label.color }}
+                  />
+                  <span className="truncate">{getLabelDisplayName(label)}</span>
+                </ContextMenuCheckboxItem>
+              ))
+            )}
+            {onEditLabels ? (
+              <>
+                <ContextMenuSeparator />
+                <ContextMenuItem onSelect={onEditLabels}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  {msg.card.editLabels}
+                </ContextMenuItem>
+              </>
+            ) : null}
+          </ContextMenuSubContent>
+        </ContextMenuSub>
+        <ContextMenuSeparator />
+        <ContextMenuItem disabled={!canEdit} onSelect={() => onArchive(card)}>
+          <Archive className="mr-2 h-4 w-4" />
+          {msg.card.archiveCard}
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   )
 }
 
@@ -410,15 +525,18 @@ function CardComposer({
   value,
   onChange,
   onSubmit,
+  isSubmitting,
   trailingAction,
 }: {
   value: string
   onChange: (value: string) => void
   onSubmit: () => void
+  isSubmitting: boolean
   trailingAction?: React.ReactNode
 }) {
   const [isOpen, setIsOpen] = React.useState(false)
   const textareaRef = React.useRef<HTMLTextAreaElement>(null)
+  const formRef = React.useRef<HTMLFormElement>(null)
 
   React.useEffect(() => {
     if (isOpen) {
@@ -426,10 +544,17 @@ function CardComposer({
     }
   }, [isOpen])
 
-  function close() {
+  const close = React.useCallback(() => {
     setIsOpen(false)
     onChange("")
-  }
+  }, [onChange])
+
+  React.useEffect(() => {
+    if (!isOpen) return
+
+    const timer = window.setTimeout(close, 30000)
+    return () => window.clearTimeout(timer)
+  }, [close, isOpen, value])
 
   if (!isOpen) {
     return (
@@ -449,9 +574,17 @@ function CardComposer({
 
   return (
     <form
+      ref={formRef}
+      onBlur={(event) => {
+        if (formRef.current?.contains(event.relatedTarget as Node | null)) {
+          return
+        }
+
+        close()
+      }}
       onSubmit={(event) => {
         event.preventDefault()
-        if (!value.trim()) return
+        if (!value.trim() || isSubmitting) return
         onSubmit()
         textareaRef.current?.focus()
       }}
@@ -460,10 +593,11 @@ function CardComposer({
         ref={textareaRef}
         value={value}
         onChange={(event) => onChange(event.target.value)}
+        disabled={isSubmitting}
         onKeyDown={(event) => {
           if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault()
-            if (!value.trim()) return
+            if (!value.trim() || isSubmitting) return
             onSubmit()
           }
           if (event.key === "Escape") close()
@@ -472,12 +606,20 @@ function CardComposer({
         className="min-h-[72px] resize-none border-none bg-card shadow-sm focus-visible:ring-2"
       />
       <div className="mt-2 flex items-center gap-2">
-        <Button type="submit" size="sm" disabled={!value.trim()}>
+        <Button
+          type="submit"
+          size="sm"
+          disabled={!value.trim() || isSubmitting}
+        >
+          {isSubmitting && (
+            <Icons.spinner className="mr-2 h-3.5 w-3.5 animate-spin" />
+          )}
           {msg.board.addCard}
         </Button>
         <button
           type="button"
           onClick={close}
+          disabled={isSubmitting}
           className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
           aria-label={msg.common.cancel}
         >
@@ -493,9 +635,12 @@ function BoardListColumn({
   boardId,
   list,
   customFields,
+  labels,
   canEdit,
+  canManage,
   isOver,
   cardDraft,
+  isCreatingCard,
   mentionedCardIds,
   onCardDraftChange,
   onCreateCard,
@@ -503,13 +648,20 @@ function BoardListColumn({
   onRenameList,
   onArchiveList,
   onOpenCard,
+  onArchiveCard,
+  onCardTypeChange,
+  onCardLabelsChange,
+  onEditLabels,
 }: {
   boardId: string
   list: BoardListModel
   customFields: CustomFieldDefinitionModel[]
+  labels: BoardLabelModel[]
   canEdit: boolean
+  canManage: boolean
   isOver: boolean
   cardDraft: string
+  isCreatingCard: boolean
   mentionedCardIds: Set<string>
   onCardDraftChange: (listId: string, value: string) => void
   onCreateCard: (listId: string) => void
@@ -517,6 +669,10 @@ function BoardListColumn({
   onRenameList: (listId: string, title: string) => void
   onArchiveList: (listId: string) => void
   onOpenCard: (card: BoardCardModel) => void
+  onArchiveCard: (card: BoardCardModel) => void
+  onCardTypeChange: (card: BoardCardModel, cardType: BoardCardTypeValue) => void
+  onCardLabelsChange: (card: BoardCardModel, labels: BoardLabelModel[]) => void
+  onEditLabels?: () => void
 }) {
   const {
     attributes,
@@ -561,7 +717,7 @@ function BoardListColumn({
         transition,
       }}
       className={cn(
-        "flex max-h-full w-[280px] shrink-0 flex-col rounded-xl border border-black/5 bg-muted/70 shadow-sm backdrop-blur-sm dark:border-white/5",
+        "flex max-h-[calc(100vh-5.75rem)] w-[280px] shrink-0 flex-col rounded-xl border border-black/5 bg-muted/70 shadow-sm backdrop-blur-sm dark:border-white/5",
         isOver && "ring-2 ring-primary/40",
         isDragging && "opacity-50"
       )}
@@ -569,7 +725,7 @@ function BoardListColumn({
       <div
         ref={setActivatorNodeRef}
         className={cn(
-          "flex items-center gap-2 px-3 pt-3",
+          "flex shrink-0 items-center gap-2 px-3 pt-3",
           canDragList && "cursor-grab active:cursor-grabbing"
         )}
         {...(canDragList ? attributes : {})}
@@ -629,7 +785,7 @@ function BoardListColumn({
         )}
       </div>
 
-      <div className="flex min-h-[8px] flex-1 flex-col gap-2 overflow-y-auto p-2">
+      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain p-2">
         <SortableContext
           items={list.cards.map((card) => card.id)}
           strategy={verticalListSortingStrategy}
@@ -639,23 +795,31 @@ function BoardListColumn({
               key={card.id}
               card={card}
               customFields={customFields}
+              boardLabels={labels}
               canEdit={canEdit}
               hasUnreadMention={mentionedCardIds.has(card.id)}
               onOpen={onOpenCard}
+              onArchive={onArchiveCard}
+              onCardTypeChange={onCardTypeChange}
+              onCardLabelsChange={onCardLabelsChange}
+              onEditLabels={canManage ? onEditLabels : undefined}
             />
           ))}
         </SortableContext>
         {list.cards.length === 0 && !canEdit && (
-          <p className="px-1 py-2 text-xs text-muted-foreground">{msg.board.noCards}</p>
+          <p className="px-1 py-2 text-xs text-muted-foreground">
+            {msg.board.noCards}
+          </p>
         )}
       </div>
 
       {canEdit && (
-        <div className="p-2 pt-0">
+        <div className="shrink-0 p-2 pt-0">
           <CardComposer
             value={cardDraft}
             onChange={(value) => onCardDraftChange(list.id, value)}
             onSubmit={() => onCreateCard(list.id)}
+            isSubmitting={isCreatingCard}
             trailingAction={
               <CreateFromTemplateMenu
                 boardId={boardId}
@@ -687,11 +851,7 @@ function ListSurface({
         </span>
       </div>
       {list.cards.slice(0, 5).map((card) => (
-        <CardSurface
-          key={card.id}
-          card={card}
-          customFields={customFields}
-        />
+        <CardSurface key={card.id} card={card} customFields={customFields} />
       ))}
     </section>
   )
@@ -840,20 +1000,24 @@ export function BoardView({
     [members, user.id]
   )
   const [memberEmail, setMemberEmail] = React.useState("")
-  const [memberRole, setMemberRole] =
-    React.useState<"EDITOR" | "VIEWER">("EDITOR")
+  const [memberRole, setMemberRole] = React.useState<"EDITOR" | "VIEWER">(
+    "EDITOR"
+  )
   const [isShareOpen, setIsShareOpen] = React.useState(false)
   const [isDetailsOpen, setIsDetailsOpen] = React.useState(false)
   const [isCustomFieldsOpen, setIsCustomFieldsOpen] = React.useState(false)
   const [isLabelsOpen, setIsLabelsOpen] = React.useState(false)
   const [isArchivedOpen, setIsArchivedOpen] = React.useState(false)
-  const [boardViewMode, setBoardViewMode] = React.useState<"board" | "calendar">(
-    "board"
-  )
+  const [boardViewMode, setBoardViewMode] = React.useState<
+    "board" | "calendar"
+  >("board")
   const [customFields, setCustomFields] = React.useState(board.customFields)
   const [labels, setLabels] = React.useState(board.labels)
   const [isRealtimeConnected, setIsRealtimeConnected] = React.useState(false)
   const [cardDrafts, setCardDrafts] = React.useState<Record<string, string>>({})
+  const [creatingCardListIds, setCreatingCardListIds] = React.useState(
+    () => new Set<string>()
+  )
   const [listDraft, setListDraft] = React.useState("")
   const [activeId, setActiveId] = React.useState<string | null>(null)
   const [activeType, setActiveType] = React.useState<"card" | "list" | null>(
@@ -861,8 +1025,9 @@ export function BoardView({
   )
   const [overListId, setOverListId] = React.useState<string | null>(null)
   const [eventSignal, setEventSignal] = React.useState(0)
-  const [selectedCard, setSelectedCard] =
-    React.useState<BoardCardModel | null>(null)
+  const [selectedCard, setSelectedCard] = React.useState<BoardCardModel | null>(
+    null
+  )
   const [cardTitleDraft, setCardTitleDraft] = React.useState("")
   const [cardDescriptionDraft, setCardDescriptionDraft] = React.useState("")
   const sensors = useSensors(
@@ -1460,51 +1625,68 @@ export function BoardView({
 
   async function createCard(listId: string) {
     if (!access.canEdit) return
+    if (creatingCardListIds.has(listId)) return
 
     const cardTitle = cardDrafts[listId]?.trim()
 
     if (!cardTitle) return
 
-    const response = await fetch(`/api/boards/${board.id}/cards`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        listId,
-        title: cardTitle,
-      }),
+    setCreatingCardListIds((current) => {
+      const next = new Set(current)
+      next.add(listId)
+      return next
     })
 
-    if (!response.ok) {
-      return toast({
-        title: msg.common.errorTitle,
-        description: `${msg.toast.cardNotCreated} ${msg.common.tryAgain}`,
-        variant: "destructive",
+    try {
+      const response = await fetch(`/api/boards/${board.id}/cards`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          listId,
+          title: cardTitle,
+        }),
       })
-    }
 
-    const card = normalizeCard({
-      ...(await response.json()),
-      cardType: "DEFAULT",
-      isTemplate: false,
-      linkedCount: 0,
-      customFieldValues: [] as CustomFieldClientValue[],
-      labels: [],
-      checklists: [],
-    })
-    setLists((current) =>
-      normalizeLists(
-        current.map((list) =>
-          list.id === listId ? { ...list, cards: [...list.cards, card] } : list
+      if (!response.ok) {
+        return toast({
+          title: msg.common.errorTitle,
+          description: `${msg.toast.cardNotCreated} ${msg.common.tryAgain}`,
+          variant: "destructive",
+        })
+      }
+
+      const card = normalizeCard({
+        ...(await response.json()),
+        cardType: "DEFAULT",
+        isTemplate: false,
+        linkedCount: 0,
+        customFieldValues: [] as CustomFieldClientValue[],
+        labels: [],
+        checklists: [],
+      })
+      setLists((current) =>
+        normalizeLists(
+          current.map((list) =>
+            list.id === listId
+              ? { ...list, cards: [...list.cards, card] }
+              : list
+          )
         )
       )
-    )
-    setCardDrafts((current) => ({
-      ...current,
-      [listId]: "",
-    }))
-    router.refresh()
+      setCardDrafts((current) => ({
+        ...current,
+        [listId]: "",
+      }))
+      router.refresh()
+    } finally {
+      setCreatingCardListIds((current) => {
+        const next = new Set(current)
+        next.delete(listId)
+        return next
+      })
+    }
   }
 
   async function saveSelectedCard() {
@@ -1559,22 +1741,82 @@ export function BoardView({
     return toast({ description: msg.toast.cardSaved })
   }
 
-  async function archiveSelectedCard() {
-    if (!access.canEdit) return
-    if (!selectedCard) return
+  async function updateCardTypeFromMenu(
+    card: BoardCardModel,
+    cardType: BoardCardTypeValue
+  ) {
+    if (!access.canEdit || card.cardType === cardType) return
 
-    const cardId = selectedCard.id
+    const previousType = card.cardType
+    updateCardType(card.id, cardType)
+
+    const response = await fetch(`/api/boards/${board.id}/cards/${card.id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ cardType }),
+    })
+
+    if (!response.ok) {
+      updateCardType(card.id, previousType)
+      return toast({
+        title: msg.common.errorTitle,
+        description: msg.toast.cardTypeNotSaved,
+        variant: "destructive",
+      })
+    }
+
+    const updatedCard = await response.json()
+    updateCardType(card.id, updatedCard.cardType)
+  }
+
+  async function updateCardLabelsFromMenu(
+    card: BoardCardModel,
+    nextLabels: BoardLabelModel[]
+  ) {
+    if (!access.canEdit) return
+
+    const previousLabels = card.labels
+    updateCardLabels(card.id, nextLabels)
 
     const response = await fetch(
-      `/api/boards/${board.id}/cards/${cardId}`,
+      `/api/boards/${board.id}/cards/${card.id}/labels`,
       {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ archived: true }),
+        body: JSON.stringify({
+          labelIds: nextLabels.map((label) => label.id),
+        }),
       }
     )
+
+    if (!response.ok) {
+      updateCardLabels(card.id, previousLabels)
+      return toast({
+        title: msg.common.errorTitle,
+        description: msg.toast.cardLabelsNotSaved,
+        variant: "destructive",
+      })
+    }
+
+    updateCardLabels(card.id, await response.json())
+  }
+
+  async function archiveCard(card: BoardCardModel) {
+    if (!access.canEdit) return
+
+    const cardId = card.id
+
+    const response = await fetch(`/api/boards/${board.id}/cards/${cardId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ archived: true }),
+    })
 
     if (!response.ok) {
       return toast({
@@ -1590,9 +1832,15 @@ export function BoardView({
         cards: list.cards.filter((card) => card.id !== cardId),
       }))
     )
-    setSelectedCard(null)
+    setSelectedCard((current) => (current?.id === cardId ? null : current))
     router.refresh()
     toast({ description: msg.toast.cardArchived })
+  }
+
+  async function archiveSelectedCard() {
+    if (!selectedCard) return
+
+    await archiveCard(selectedCard)
   }
 
   async function shareBoard(event: React.FormEvent<HTMLFormElement>) {
@@ -1780,7 +2028,10 @@ export function BoardView({
                 {msg.board.calendar}
               </button>
             </div>
-            <MemberStack members={members} onClick={() => setIsShareOpen(true)} />
+            <MemberStack
+              members={members}
+              onClick={() => setIsShareOpen(true)}
+            />
             {access.canManage && (
               <Button
                 type="button"
@@ -1817,7 +2068,9 @@ export function BoardView({
                     </DropdownMenuItem>
                   )}
                   {access.canManage && (
-                    <DropdownMenuItem onSelect={() => setIsCustomFieldsOpen(true)}>
+                    <DropdownMenuItem
+                      onSelect={() => setIsCustomFieldsOpen(true)}
+                    >
                       <ListChecks className="mr-2 h-4 w-4" />
                       {msg.board.customFields}
                     </DropdownMenuItem>
@@ -1865,7 +2118,7 @@ export function BoardView({
             onDragEnd={handleDragEnd}
             onDragCancel={handleDragCancel}
           >
-            <div className="flex flex-1 items-start gap-3 overflow-x-auto p-4">
+            <div className="flex min-h-0 flex-1 items-start gap-3 overflow-x-auto p-4">
               <SortableContext
                 items={lists.map((list) => list.id)}
                 strategy={horizontalListSortingStrategy}
@@ -1876,9 +2129,12 @@ export function BoardView({
                     boardId={board.id}
                     list={list}
                     customFields={customFields}
+                    labels={labels}
                     canEdit={access.canEdit}
+                    canManage={access.canManage}
                     isOver={overListId === list.id && activeType === "card"}
                     cardDraft={cardDrafts[list.id] ?? ""}
+                    isCreatingCard={creatingCardListIds.has(list.id)}
                     mentionedCardIds={mentionedCardIds}
                     onCardDraftChange={(listId, value) =>
                       setCardDrafts((current) => ({
@@ -1894,6 +2150,14 @@ export function BoardView({
                     onRenameList={renameList}
                     onArchiveList={archiveList}
                     onOpenCard={openCard}
+                    onArchiveCard={(card) => void archiveCard(card)}
+                    onCardTypeChange={(card, cardType) =>
+                      void updateCardTypeFromMenu(card, cardType)
+                    }
+                    onCardLabelsChange={(card, nextLabels) =>
+                      void updateCardLabelsFromMenu(card, nextLabels)
+                    }
+                    onEditLabels={() => setIsLabelsOpen(true)}
                   />
                 ))}
               </SortableContext>
@@ -2087,7 +2351,9 @@ export function BoardView({
               <div className="space-y-1 text-xs text-muted-foreground">
                 {CARD_ID_PATTERN_TOKENS.map((item) => (
                   <p key={item.token}>
-                    <span className="font-mono text-foreground">{item.token}</span>
+                    <span className="font-mono text-foreground">
+                      {item.token}
+                    </span>
                     {" — "}
                     {CARD_ID_TOKEN_DESCRIPTIONS[item.token] ?? item.description}
                   </p>
@@ -2132,205 +2398,209 @@ export function BoardView({
             className="relative flex max-h-[88vh] w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl"
             onEscapeKeyDown={preventCardDialogDismissOnLightbox}
           >
-          <DialogHeader className="sr-only">
-            <DialogTitle>{msg.card.details}</DialogTitle>
-            <DialogDescription>{msg.card.detailsDesc}</DialogDescription>
-          </DialogHeader>
-          {selectedCard && (
-            <>
-              <div className="flex shrink-0 items-center gap-2 border-b px-4 py-2.5 pr-12">
-                {selectedCard.displayId && (
-                  <span className="font-mono text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    {selectedCard.displayId}
+            <DialogHeader className="sr-only">
+              <DialogTitle>{msg.card.details}</DialogTitle>
+              <DialogDescription>{msg.card.detailsDesc}</DialogDescription>
+            </DialogHeader>
+            {selectedCard && (
+              <>
+                <div className="flex shrink-0 items-center gap-2 border-b px-4 py-2.5 pr-12">
+                  {selectedCard.displayId && (
+                    <span className="font-mono text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {selectedCard.displayId}
+                    </span>
+                  )}
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+                    <Icons.boards className="h-3.5 w-3.5" />
+                    {selectedCardList?.title ?? "Card"}
                   </span>
-                )}
-                <span className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
-                  <Icons.boards className="h-3.5 w-3.5" />
-                  {selectedCardList?.title ?? "Card"}
-                </span>
-              </div>
+                </div>
 
-              <div className="flex min-h-0 flex-1 flex-col overflow-y-auto md:flex-row md:overflow-hidden">
-                {/* Main column: title and description */}
-                <div className="space-y-5 p-5 md:min-h-0 md:flex-[1.7] md:overflow-y-auto">
-                  <Input
-                    value={cardTitleDraft}
-                    onChange={(event) => setCardTitleDraft(event.target.value)}
-                    onBlur={() => {
-                      if (
-                        access.canEdit &&
-                        cardTitleDraft.trim() &&
-                        cardTitleDraft.trim() !== selectedCard.title
-                      ) {
-                        void saveSelectedCard()
+                <div className="flex min-h-0 flex-1 flex-col overflow-y-auto md:flex-row md:overflow-hidden">
+                  {/* Main column: title and description */}
+                  <div className="space-y-5 p-5 md:min-h-0 md:flex-[1.7] md:overflow-y-auto">
+                    <Input
+                      value={cardTitleDraft}
+                      onChange={(event) =>
+                        setCardTitleDraft(event.target.value)
                       }
-                    }}
-                    placeholder={msg.card.title}
-                    disabled={!access.canEdit}
-                    className="h-auto border-none px-0 text-xl font-semibold shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:cursor-default disabled:opacity-100"
-                  />
+                      onBlur={() => {
+                        if (
+                          access.canEdit &&
+                          cardTitleDraft.trim() &&
+                          cardTitleDraft.trim() !== selectedCard.title
+                        ) {
+                          void saveSelectedCard()
+                        }
+                      }}
+                      placeholder={msg.card.title}
+                      disabled={!access.canEdit}
+                      className="h-auto border-none px-0 text-xl font-semibold shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:cursor-default disabled:opacity-100"
+                    />
 
-                  <CardTemplateActions
-                    boardId={board.id}
-                    card={selectedCard}
-                    lists={lists}
-                    canEdit={access.canEdit}
-                    onCardUpdated={(card) =>
-                      updateCardModel(card.id, {
-                        isTemplate: card.isTemplate,
-                        cardType: card.cardType,
-                      })
-                    }
-                    onCardCreated={(card, listId) => {
-                      insertCreatedCard(card, listId)
-                      router.refresh()
-                    }}
-                  />
+                    <CardTemplateActions
+                      boardId={board.id}
+                      card={selectedCard}
+                      lists={lists}
+                      canEdit={access.canEdit}
+                      onCardUpdated={(card) =>
+                        updateCardModel(card.id, {
+                          isTemplate: card.isTemplate,
+                          cardType: card.cardType,
+                        })
+                      }
+                      onCardCreated={(card, listId) => {
+                        insertCreatedCard(card, listId)
+                        router.refresh()
+                      }}
+                    />
 
-                  <CardTypePicker
-                    boardId={board.id}
-                    cardId={selectedCard.id}
-                    cardType={selectedCard.cardType}
-                    canEdit={access.canEdit}
-                    onCardTypeChange={(cardType) =>
-                      updateCardType(selectedCard.id, cardType)
-                    }
-                  />
+                    <CardTypePicker
+                      boardId={board.id}
+                      cardId={selectedCard.id}
+                      cardType={selectedCard.cardType}
+                      canEdit={access.canEdit}
+                      onCardTypeChange={(cardType) =>
+                        updateCardType(selectedCard.id, cardType)
+                      }
+                    />
 
-                  <section>
-                    <div className="mb-2 flex items-center gap-2">
-                      <AlignLeft className="h-4 w-4 text-muted-foreground" />
-                      <h3 className="text-sm font-semibold">{msg.card.description}</h3>
-                    </div>
-                    <div className="pl-6">
-                      <RichTextEditor
-                        key={selectedCard.id}
-                        value={selectedCard.description}
-                        editable={access.canEdit}
-                        onChange={setCardDescriptionDraft}
-                        uploadContext={{
-                          boardId: board.id,
-                          cardId: selectedCard.id,
-                          target: "card-description",
-                        }}
-                      />
-                      {access.canEdit && (
-                        <div className="mt-2 flex items-center gap-2">
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={saveSelectedCard}
-                          >
-                            {msg.common.save}
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            onClick={archiveSelectedCard}
-                          >
-                            <Archive className="mr-2 h-4 w-4" />
-                            {msg.card.archiveCard}
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </section>
+                    <section>
+                      <div className="mb-2 flex items-center gap-2">
+                        <AlignLeft className="h-4 w-4 text-muted-foreground" />
+                        <h3 className="text-sm font-semibold">
+                          {msg.card.description}
+                        </h3>
+                      </div>
+                      <div className="pl-6">
+                        <RichTextEditor
+                          key={selectedCard.id}
+                          value={selectedCard.description}
+                          editable={access.canEdit}
+                          onChange={setCardDescriptionDraft}
+                          uploadContext={{
+                            boardId: board.id,
+                            cardId: selectedCard.id,
+                            target: "card-description",
+                          }}
+                        />
+                        {access.canEdit && (
+                          <div className="mt-2 flex items-center gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={saveSelectedCard}
+                            >
+                              {msg.common.save}
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              onClick={archiveSelectedCard}
+                            >
+                              <Archive className="mr-2 h-4 w-4" />
+                              {msg.card.archiveCard}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </section>
 
-                  <CardDates
-                    boardId={board.id}
-                    cardId={selectedCard.id}
-                    dates={{
-                      startDate: selectedCard.startDate,
-                      dueAt: selectedCard.dueAt,
-                      dueComplete: selectedCard.dueComplete,
-                    }}
-                    canEdit={access.canEdit}
-                    onDatesChange={(dates) =>
-                      updateCardDates(selectedCard.id, dates)
-                    }
-                  />
+                    <CardDates
+                      boardId={board.id}
+                      cardId={selectedCard.id}
+                      dates={{
+                        startDate: selectedCard.startDate,
+                        dueAt: selectedCard.dueAt,
+                        dueComplete: selectedCard.dueComplete,
+                      }}
+                      canEdit={access.canEdit}
+                      onDatesChange={(dates) =>
+                        updateCardDates(selectedCard.id, dates)
+                      }
+                    />
 
-                  <CardLabels
-                    boardId={board.id}
-                    cardId={selectedCard.id}
-                    boardLabels={labels}
-                    cardLabels={selectedCard.labels}
-                    canEdit={access.canEdit}
-                    canManage={access.canManage}
-                    onLabelsChange={(next) =>
-                      updateCardLabels(selectedCard.id, next)
-                    }
-                    onEditLabels={
-                      access.canManage
-                        ? () => setIsLabelsOpen(true)
-                        : undefined
-                    }
-                  />
+                    <CardLabels
+                      boardId={board.id}
+                      cardId={selectedCard.id}
+                      boardLabels={labels}
+                      cardLabels={selectedCard.labels}
+                      canEdit={access.canEdit}
+                      canManage={access.canManage}
+                      onLabelsChange={(next) =>
+                        updateCardLabels(selectedCard.id, next)
+                      }
+                      onEditLabels={
+                        access.canManage
+                          ? () => setIsLabelsOpen(true)
+                          : undefined
+                      }
+                    />
 
-                  <CardChecklists
-                    boardId={board.id}
-                    cardId={selectedCard.id}
-                    checklists={selectedCard.checklists}
-                    canEdit={access.canEdit}
-                    onChecklistsChange={(next) =>
-                      updateCardChecklists(selectedCard.id, next)
-                    }
-                  />
+                    <CardChecklists
+                      boardId={board.id}
+                      cardId={selectedCard.id}
+                      checklists={selectedCard.checklists}
+                      canEdit={access.canEdit}
+                      onChecklistsChange={(next) =>
+                        updateCardChecklists(selectedCard.id, next)
+                      }
+                    />
 
-                  <CardLinks
-                    boardId={board.id}
-                    cardId={selectedCard.id}
-                    boardCards={allBoardCards}
-                    listTitlesById={listTitlesById}
-                    canEdit={access.canEdit}
-                    onOpenCard={openCard}
-                    onLinkedCountDelta={adjustLinkedCount}
-                  />
+                    <CardLinks
+                      boardId={board.id}
+                      cardId={selectedCard.id}
+                      boardCards={allBoardCards}
+                      listTitlesById={listTitlesById}
+                      canEdit={access.canEdit}
+                      onOpenCard={openCard}
+                      onLinkedCountDelta={adjustLinkedCount}
+                    />
 
-                  <CardCustomFields
-                    boardId={board.id}
-                    cardId={selectedCard.id}
-                    fields={customFields}
-                    values={selectedCard.customFieldValues ?? []}
-                    canEdit={access.canEdit}
-                    onValuesChange={(values) =>
-                      updateCardCustomFieldValues(selectedCard.id, values)
-                    }
-                  />
+                    <CardCustomFields
+                      boardId={board.id}
+                      cardId={selectedCard.id}
+                      fields={customFields}
+                      values={selectedCard.customFieldValues ?? []}
+                      canEdit={access.canEdit}
+                      onValuesChange={(values) =>
+                        updateCardCustomFieldValues(selectedCard.id, values)
+                      }
+                    />
 
-                  <CardAttachments
-                    boardId={board.id}
-                    cardId={selectedCard.id}
-                    currentUserId={user.id}
-                    canUpload={access.canEdit}
-                    canManage={access.canManage}
-                    refreshSignal={eventSignal}
-                  />
-                </div>
-
-                {/* Side column: comments and activity */}
-                <div className="space-y-3 border-t p-5 md:min-h-0 md:flex-1 md:overflow-y-auto md:border-l md:border-t-0">
-                  <div className="flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                    <h3 className="text-sm font-semibold">
-                      {msg.card.commentsActivity}
-                    </h3>
+                    <CardAttachments
+                      boardId={board.id}
+                      cardId={selectedCard.id}
+                      currentUserId={user.id}
+                      canUpload={access.canEdit}
+                      canManage={access.canManage}
+                      refreshSignal={eventSignal}
+                    />
                   </div>
-                  <CardComments
-                    boardId={board.id}
-                    cardId={selectedCard.id}
-                    currentUserId={user.id}
-                    canComment={access.canEdit}
-                    canManage={access.canManage}
-                    refreshSignal={eventSignal}
-                    mentionableUsers={mentionableUsers}
-                  />
+
+                  {/* Side column: comments and activity */}
+                  <div className="space-y-3 border-t p-5 md:min-h-0 md:flex-1 md:overflow-y-auto md:border-l md:border-t-0">
+                    <div className="flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                      <h3 className="text-sm font-semibold">
+                        {msg.card.commentsActivity}
+                      </h3>
+                    </div>
+                    <CardComments
+                      boardId={board.id}
+                      cardId={selectedCard.id}
+                      currentUserId={user.id}
+                      canComment={access.canEdit}
+                      canManage={access.canManage}
+                      refreshSignal={eventSignal}
+                      mentionableUsers={mentionableUsers}
+                    />
+                  </div>
                 </div>
-              </div>
-            </>
-          )}
-          <InlineImageLightboxHost />
+              </>
+            )}
+            <InlineImageLightboxHost />
           </DialogContent>
         </InlineImageLightboxProvider>
       </Dialog>

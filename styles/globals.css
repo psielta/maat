@@ -96,3 +96,25 @@
   animation: mention-alert-pulse 1.2s ease-in-out infinite;
   border-color: hsl(var(--destructive)) !important;
 }
+
+@page {
+  size: A4;
+  margin: 14mm;
+}
+
+@media print {
+  /* Let content flow across pages instead of being clipped by the
+     dashboard shell's fixed-height/overflow-hidden wrapper. */
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  /* Preserve label/card-type colors when printing. */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

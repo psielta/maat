@@ -16,6 +16,8 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="h-screen overflow-hidden bg-background">{children}</div>
+    <div className="h-screen overflow-hidden bg-background print:h-auto print:overflow-visible">
+      {children}
+    </div>
   )
 }

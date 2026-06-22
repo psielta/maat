@@ -34,6 +34,7 @@ import {
   MessageSquare,
   MoreHorizontal,
   Pencil,
+  Printer,
   Shapes,
   Tags,
   UserPlus,
@@ -2055,6 +2056,16 @@ export function BoardView({
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-44">
+                  {access.canRead && (
+                    <DropdownMenuItem
+                      onSelect={() =>
+                        router.push(`/dashboard/boards/${board.id}/print`)
+                      }
+                    >
+                      <Printer className="mr-2 h-4 w-4" />
+                      {msg.board.printReport}
+                    </DropdownMenuItem>
+                  )}
                   {access.canRead && (
                     <DropdownMenuItem onSelect={() => setIsArchivedOpen(true)}>
                       <Archive className="mr-2 h-4 w-4" />

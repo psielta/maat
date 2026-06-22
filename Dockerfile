@@ -58,6 +58,9 @@ ENV HOSTNAME="0.0.0.0"
 COPY --from=build /app/public ./public
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
+# O trace do standalone deixa @prisma/client / .prisma como symlinks apontando para
+# o store .pnpm (inexistente aqui). Remove antes de copiar os arquivos reais.
+RUN rm -rf ./node_modules/@prisma ./node_modules/.prisma
 # Garante o Prisma Client + engine (externalizado via serverExternalPackages).
 COPY --from=build /prisma-deps/.prisma ./node_modules/.prisma
 COPY --from=build /prisma-deps/@prisma ./node_modules/@prisma

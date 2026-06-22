@@ -290,3 +290,38 @@ export const labelReorderSchema = z.object({
 export const cardLabelsPatchSchema = z.object({
   labelIds: z.array(z.string().min(1)),
 })
+
+export const MAX_CHECKLISTS_PER_CARD = 20
+export const MAX_ITEMS_PER_CHECKLIST = 100
+
+export const checklistCreateSchema = z.object({
+  title: z.string().trim().min(1).max(80).optional(),
+})
+
+export const checklistPatchSchema = z.object({
+  title: z.string().trim().min(1).max(80),
+})
+
+export const checklistReorderSchema = z.object({
+  checklistIds: z.array(z.string().min(1)),
+})
+
+export const checklistItemCreateSchema = z.object({
+  text: z.string().trim().min(1).max(500),
+})
+
+export const checklistItemPatchSchema = z
+  .object({
+    text: z.string().trim().min(1).max(500).optional(),
+    isComplete: z.boolean().optional(),
+  })
+  .refine(
+    (data) => data.text !== undefined || data.isComplete !== undefined,
+    {
+      message: "At least one field must be provided.",
+    }
+  )
+
+export const checklistItemReorderSchema = z.object({
+  itemIds: z.array(z.string().min(1)),
+})

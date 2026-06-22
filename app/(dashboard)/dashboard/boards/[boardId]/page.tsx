@@ -9,6 +9,8 @@ import { serializeCardDates } from "@/lib/card-dates"
 import { cardSelect } from "@/lib/card-select"
 import { customFieldSelect, customFieldValueSelect } from "@/lib/custom-field-select"
 import { serializeCustomFieldValueRow } from "@/lib/custom-field-serialize"
+import { cardChecklistsSelect } from "@/lib/checklist-select"
+import { serializeCardChecklists } from "@/lib/checklist-serialize"
 import { cardLabelSelect } from "@/lib/label-select"
 import { serializeBoardLabel, serializeCardLabels } from "@/lib/label-serialize"
 
@@ -89,6 +91,7 @@ export default async function BoardPage({ params }: BoardPageProps) {
           cards: {
             select: {
               ...cardSelect,
+              ...cardChecklistsSelect,
               customFieldValues: {
                 select: customFieldValueSelect,
               },
@@ -151,6 +154,7 @@ export default async function BoardPage({ params }: BoardPageProps) {
         ...serializeCardDates(card),
         customFieldValues: card.customFieldValues.map(serializeCustomFieldValueRow),
         labels: serializeCardLabels(card.labels),
+        checklists: serializeCardChecklists(card.checklists),
       })),
     })),
   }

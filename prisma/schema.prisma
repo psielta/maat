@@ -149,6 +149,7 @@ model BoardCard {
   attachments       BoardCardAttachment[]
   customFieldValues BoardCardCustomFieldValue[]
   labels            BoardCardLabel[]
+  checklists        BoardCardChecklist[]
 
   @@index([listId])
   @@index([displayId])
@@ -327,6 +328,36 @@ model BoardCardLabel {
   @@id([cardId, labelId])
   @@index([labelId])
   @@map(name: "board_card_labels")
+}
+
+model BoardCardChecklist {
+  id        String   @id @default(cuid())
+  title     String   @default("Checklist")
+  order     Int      @default(0) @map(name: "sort_order")
+  createdAt DateTime @default(now()) @map(name: "created_at")
+  updatedAt DateTime @updatedAt @map(name: "updated_at")
+  cardId    String   @map(name: "card_id")
+
+  card  BoardCard                @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  items BoardCardChecklistItem[]
+
+  @@index([cardId])
+  @@map(name: "board_card_checklists")
+}
+
+model BoardCardChecklistItem {
+  id          String   @id @default(cuid())
+  text        String
+  isComplete  Boolean  @default(false) @map(name: "is_complete")
+  order       Int      @default(0) @map(name: "sort_order")
+  createdAt   DateTime @default(now()) @map(name: "created_at")
+  updatedAt   DateTime @updatedAt @map(name: "updated_at")
+  checklistId String   @map(name: "checklist_id")
+
+  checklist BoardCardChecklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+
+  @@index([checklistId])
+  @@map(name: "board_card_checklist_items")
 }
 
 model BoardEvent {

@@ -77,10 +77,13 @@ import { BoardLabelsManager } from "@/components/board-labels-manager"
 import { CardCustomFields } from "@/components/card-custom-fields"
 import { CardLabelStrips } from "@/components/card-label-strips"
 import { CardLabels } from "@/components/card-labels"
+import { CardChecklistBadge } from "@/components/card-checklist-badge"
+import { CardChecklists } from "@/components/card-checklists"
 import { CardDateBadge } from "@/components/card-date-badge"
 import { CardDates } from "@/components/card-dates"
 import { CustomFieldBadges } from "@/components/custom-field-badges"
 import type { CardDatesModel } from "@/lib/card-dates"
+import type { ChecklistModel } from "@/lib/checklist-display"
 import type { BoardLabelModel } from "@/lib/label-display"
 import type { CustomFieldDefinitionModel } from "@/lib/custom-field-display"
 import type { CustomFieldClientValue } from "@/lib/custom-field-values"
@@ -110,6 +113,7 @@ export type BoardCardModel = {
   listId: string
   customFieldValues: CustomFieldClientValue[]
   labels: BoardLabelModel[]
+  checklists: ChecklistModel[]
 }
 
 export type BoardListModel = {
@@ -162,6 +166,7 @@ function normalizeCard(card: BoardCardModel): BoardCardModel {
     dueComplete: card.dueComplete ?? false,
     customFieldValues: card.customFieldValues ?? [],
     labels: card.labels ?? [],
+    checklists: card.checklists ?? [],
   }
 }
 
@@ -252,7 +257,10 @@ function CardSurface({
         fields={customFields}
         values={card.customFieldValues}
       />
-      <CardDateBadge dates={card} />
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        <CardDateBadge dates={card} className="mt-0" />
+        <CardChecklistBadge checklists={card.checklists} />
+      </div>
       {card.description && (
         <div className="mt-2 flex items-center gap-1.5 text-muted-foreground">
           <AlignLeft className="h-3.5 w-3.5 shrink-0" />
@@ -325,7 +333,10 @@ function SortableCard({
           fields={customFields}
           values={card.customFieldValues}
         />
-        <CardDateBadge dates={card} />
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <CardDateBadge dates={card} className="mt-0" />
+          <CardChecklistBadge checklists={card.checklists} />
+        </div>
         {card.description && (
           <div className="mt-2 flex items-center gap-1.5 text-muted-foreground">
             <AlignLeft className="h-3.5 w-3.5 shrink-0" />
@@ -913,6 +924,25 @@ export function BoardView({
     )
   }
 
+  function updateCardChecklists(
+    cardId: string,
+    nextChecklists: ChecklistModel[]
+  ) {
+    setLists((current) =>
+      current.map((list) => ({
+        ...list,
+        cards: list.cards.map((card) =>
+          card.id === cardId ? { ...card, checklists: nextChecklists } : card
+        ),
+      }))
+    )
+    setSelectedCard((current) =>
+      current?.id === cardId
+        ? { ...current, checklists: nextChecklists }
+        : current
+    )
+  }
+
   function handleBoardLabelsChange(nextLabels: BoardLabelModel[]) {
     const nextLabelIds = new Set(nextLabels.map((label) => label.id))
     setLabels(nextLabels)
@@ -1306,6 +1336,7 @@ export function BoardView({
       ...(await response.json()),
       customFieldValues: [] as CustomFieldClientValue[],
       labels: [],
+      checklists: [],
     })
     setLists((current) =>
       normalizeLists(
@@ -1358,6 +1389,7 @@ export function BoardView({
       dueAt: selectedCard.dueAt,
       dueComplete: selectedCard.dueComplete,
       labels: selectedCard.labels,
+      checklists: selectedCard.checklists,
     })
     setLists((current) =>
       normalizeLists(
@@ -2033,6 +2065,16 @@ export function BoardView({
                       access.canManage
                         ? () => setIsLabelsOpen(true)
                         : undefined
+                    }
+                  />
+
+                  <CardChecklists
+                    boardId={board.id}
+                    cardId={selectedCard.id}
+                    checklists={selectedCard.checklists}
+                    canEdit={access.canEdit}
+                    onChecklistsChange={(next) =>
+                      updateCardChecklists(selectedCard.id, next)
                     }
                   />
 
